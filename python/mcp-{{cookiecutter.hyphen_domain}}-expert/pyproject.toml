@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-"awslabs.mcp-{{cookiecutter.hyphen_domain}}-expert = "{{cookiecutter.underscore_namespace}}.mcp_{{cookiecutter.underscore_domain}}_expert.server:main"
+"awslabs.mcp-{{cookiecutter.hyphen_domain}}-expert" = "{{cookiecutter.underscore_namespace}}.mcp_{{cookiecutter.underscore_domain}}_expert.server:main"
 
 [dependency-groups]
 dev = [
