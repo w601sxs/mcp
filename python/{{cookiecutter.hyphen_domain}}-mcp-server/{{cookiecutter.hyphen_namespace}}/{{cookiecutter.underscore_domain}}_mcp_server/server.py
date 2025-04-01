@@ -1,4 +1,4 @@
-"""{{ cookiecutter.project_namespace }} MCP {{cookiecutter.project_domain}} expert server implementation."""
+"""{{ cookiecutter.project_namespace }} {{cookiecutter.project_domain}} MCP Server implementation."""
 
 import argparse
 from typing import Literal
@@ -6,7 +6,7 @@ from typing import Literal
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP(
-    "{{cookiecutter.hyphen_namespace}}.mcp-{{cookiecutter.hyphen_domain}}-expert",
+    "{{cookiecutter.hyphen_namespace}}.{{cookiecutter.hyphen_domain}}-mcp-server",
     instructions="{{cookiecutter.instructions}}",
     dependencies=[
         "pydantic",
@@ -22,8 +22,8 @@ async def example_tool(
 
     Replace this with your own tool implementation.
     """
-    project_name = "{{cookiecutter.project_namespace}} {{cookiecutter.project_domain}}"
-    return f"Hello from {project_name} expert! Your query was {query}. Replace this with your tool's logic"
+    project_name = "{{cookiecutter.project_namespace}} {{cookiecutter.project_domain}} MCP Server"
+    return f"Hello from {project_name}! Your query was {query}. Replace this with your tool's logic"
 
 
 @mcp.tool(name="MathTool")

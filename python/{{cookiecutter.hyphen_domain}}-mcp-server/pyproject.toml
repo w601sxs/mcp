@@ -1,5 +1,5 @@
 [project]
-name = "{{cookiecutter.hyphen_namespace}}.mcp-{{cookiecutter.hyphen_domain}}-expert"
+name = "{{cookiecutter.hyphen_namespace}}.{{cookiecutter.hyphen_domain}}-mcp-server"
 version = "{{cookiecutter.version}}"
 description = "{{cookiecutter.description}}"
 readme = "README.md"
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-"awslabs.mcp-{{cookiecutter.hyphen_domain}}-expert" = "{{cookiecutter.underscore_namespace}}.mcp_{{cookiecutter.underscore_domain}}_expert.server:main"
+"awslabs.{{cookiecutter.hyphen_domain}}-mcp-server" = "{{cookiecutter.underscore_namespace}}.{{cookiecutter.hyphen_domain}}_mcp_server.server:main"
 
 [dependency-groups]
 dev = [
@@ -71,7 +71,7 @@ version = "{{cookiecutter.version}}"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",
-    "{{cookiecutter.underscore_namespace}}/mcp_{{cookiecutter.underscore_domain}}_expert.__init__py:__version__"
+    "{{cookiecutter.underscore_namespace}}/{{cookiecutter.hyphen_domain}}_mcp_server.__init__py:__version__"
 ]
 update_changelog_on_bump = true
 
