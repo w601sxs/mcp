@@ -1,16 +1,16 @@
 [project]
-name = "{{cookiecutter.hyphen_namespace}}.{{cookiecutter.hyphen_domain}}-mcp-server"
-version = "{{cookiecutter.version}}"
+name = "awslabs.{{cookiecutter.project_domain | lower | replace(' ', '-') | replace('_', '-')}}-mcp-server"
+version = "0.0.0"
 description = "{{cookiecutter.description}}"
 readme = "README.md"
-requires-python = "{{cookiecutter.python_version}}"
+requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.6.0",
     "pydantic>=2.10.6",
 ]
 
 [project.scripts]
-"awslabs.{{cookiecutter.hyphen_domain}}-mcp-server" = "{{cookiecutter.underscore_namespace}}.{{cookiecutter.hyphen_domain}}_mcp_server.server:main"
+"awslabs.{{cookiecutter.project_domain | lower | replace(' ', '-') | replace('_', '-')}}-mcp-server" = "awslabs.{{cookiecutter.project_domain | lower | replace(' ', '-') | replace('_', '-') | replace('-', '_')}}_mcp_server.server:main"
 
 [dependency-groups]
 dev = [
@@ -67,11 +67,11 @@ docstring-code-format = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "{{cookiecutter.version}}"
+version = "0.0.0"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",
-    "{{cookiecutter.underscore_namespace}}/{{cookiecutter.hyphen_domain}}_mcp_server.__init__py:__version__"
+    "awslabs/{{cookiecutter.project_domain | lower | replace(' ', '-') | replace('_', '-') | replace('-', '_')}}_mcp_server/__init__.py:__version__"
 ]
 update_changelog_on_bump = true
 
