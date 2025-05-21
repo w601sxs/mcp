@@ -3,7 +3,7 @@ from langchain_mcp_adapters.client import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 
 class AgentTestHarness:

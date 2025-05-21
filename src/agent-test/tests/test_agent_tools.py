@@ -38,18 +38,20 @@ def test_dataset():
             return AgentEvaluationDataset.from_json(dataset_path)
 
     # Otherwise use some default test cases with time MCP server tools
-    return AgentEvaluationDataset([
-        AgentTestCase(
-            input="What's the current time in Tokyo?",
-            expected_tools=['get_current_time'],
-            description='Testing the get_current_time tool',
-        ),
-        AgentTestCase(
-            input='Convert 3:00 PM Los Angeles time to London time',
-            expected_tools=['convert_time'],
-            description='Testing time conversion between time zones',
-        ),
-    ])
+    return AgentEvaluationDataset(
+        [
+            AgentTestCase(
+                input="What's the current time in Tokyo?",
+                expected_tools=['get_current_time'],
+                description='Testing the get_current_time tool',
+            ),
+            AgentTestCase(
+                input='Convert 3:00 PM Los Angeles time to London time',
+                expected_tools=['convert_time'],
+                description='Testing time conversion between time zones',
+            ),
+        ]
+    )
 
 
 @pytest.mark.asyncio
