@@ -75,18 +75,15 @@ class AgentToolTest:
         logger.info(f'Response: {response}')
 
         # Extract actual tools called from response messages
-        tools_called = []
+        # Use a dictionary to deduplicate calls by tool_call_id
+        tool_calls_by_id = {}
+
         for message in response['messages']:
             # Check for assistant messages with tool calls
             if isinstance(message, AIMessage) and hasattr(message, 'tool_calls'):
                 for tool_call in message.tool_calls:
-                    tools_called.append(tool_call['name'])
-
-            # Also check for direct ToolMessage instances
-            elif isinstance(message, ToolMessage):
-                # Extract the tool name from ToolMessage
-                if hasattr(message, 'name'):
-                    tools_called.append(message.name)
+                    if 'id' in tool_call:
+                        tool_calls_by_id[tool_call['id']] = tool_call['name']
 
             # Handle any direct dictionary format (for backward compatibility)
             elif (
@@ -95,7 +92,14 @@ class AgentToolTest:
                 and 'tool_calls' in message
             ):
                 for tool_call in message.get('tool_calls', []):
-                    tools_called.append(tool_call['name'])
+                    if 'id' in tool_call:
+                        tool_calls_by_id[tool_call['id']] = tool_call['name']
+
+        # We don't want to count ToolMessage instances as separate tools
+        # They are responses to tool calls already tracked above
+
+        # Get unique tool calls
+        tools_called = list(tool_calls_by_id.values())
 
         # Use the last message as the actual output if not provided
         if actual_output is None and response['messages']:
