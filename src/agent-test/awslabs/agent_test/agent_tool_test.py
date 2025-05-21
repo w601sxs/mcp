@@ -4,7 +4,7 @@ import asyncio
 from awslabs.agent_test.agent_test_harness import AgentTestHarness
 from deepeval.metrics.tool_correctness.tool_correctness import ToolCorrectnessMetric
 from deepeval.test_case.llm_test_case import LLMTestCase, ToolCall
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage
 from loguru import logger
 from typing import Any, Dict, List, Optional
 
