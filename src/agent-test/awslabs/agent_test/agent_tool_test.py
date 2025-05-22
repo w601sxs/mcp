@@ -1,4 +1,8 @@
-"""Tools for testing agent tool usage with DeepEval."""
+"""Tools for testing agent tool usage with DeepEval.
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+"""
 
 import asyncio
 from awslabs.agent_test.agent_test_harness import AgentTestHarness

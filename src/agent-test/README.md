@@ -15,7 +15,7 @@ The tool testing framework allows you to:
 
 * `agent_tool_test.py`: Core testing functionality
 * `agent_test_dataset.py`: Dataset management for test cases
-* `cli/test_agent.py`: Command-line interface for running tests
+* `agent_test_harness.py`: Test harness for running agents with MCP
 * `tests/test_agent_tools.py`: Pytest integration
 * `examples/agent_test_cases.yaml`: Example test cases
 
@@ -24,7 +24,7 @@ The tool testing framework allows you to:
 ### Basic Usage
 
 ```python
-from awslabs.common.agent_tool_test import AgentToolTest
+from awslabs.agent_test.agent_tool_test import AgentToolTest
 
 # Configure agent test
 test = AgentToolTest(
@@ -47,8 +47,8 @@ print(f"Reason: {result['reason']}")
 ### Using Test Cases from YAML/JSON
 
 ```python
-from awslabs.common.agent_test_dataset import AgentEvaluationDataset
-from awslabs.common.agent_tool_test import AgentToolTest
+from awslabs.agent_test.agent_test_dataset import AgentEvaluationDataset
+from awslabs.agent_test.agent_tool_test import AgentToolTest
 import asyncio
 
 # Load test cases
@@ -76,19 +76,6 @@ async def run_tests():
 results = asyncio.run(run_tests())
 ```
 
-### Using Command Line Interface
-
-```bash
-# Run tests with default settings
-python -m awslabs.common.cli.test_agent
-
-# Run tests with a custom dataset
-python -m awslabs.common.cli.test_agent --dataset examples/agent_test_cases.yaml
-
-# Run tests with a specific model
-python -m awslabs.common.cli.test_agent --model your.model-id-here:0 --region us-east-1
-```
-
 ## Integration with pytest
 
 To run tests using pytest and DeepEval's test runner:
@@ -97,8 +84,8 @@ To run tests using pytest and DeepEval's test runner:
 # Install DeepEval
 pip install deepeval
 
-# Run tests
-deepeval test run awslabs/common/tests/test_agent_tools.py
+# Run tests using pytest directly
+pytest tests/test_agent_tools.py
 ```
 
 You can set environment variables to configure the tests:

@@ -1,3 +1,9 @@
+"""Agent testing harness for MCP tools.
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+"""
+
 from langchain_aws.chat_models import ChatBedrockConverse
 from langchain_mcp_adapters.client import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
@@ -17,7 +23,15 @@ class AgentTestHarness:
         region_name: str = 'us-west-2',
         mcp_command: str = 'uvx',
     ):
-        """Initialize the AgentTestHarness."""
+        """Initialize the AgentTestHarness.
+        
+        Args:
+            mcp_args: List of arguments to pass to the MCP server
+            mcp_env: Optional environment variables to set for the MCP server
+            model_id: Bedrock model ID to use for agent
+            region_name: AWS region name for Bedrock
+            mcp_command: Command to use for launching MCP server
+        """
         self.model_id = model_id
         self.mcp_command = mcp_command
         self.mcp_args = mcp_args

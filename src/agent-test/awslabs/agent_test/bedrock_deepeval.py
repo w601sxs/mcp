@@ -1,3 +1,9 @@
+"""Bedrock model adapters for DeepEval.
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+"""
+
 from deepeval.models.base_model import DeepEvalBaseEmbeddingModel, DeepEvalBaseLLM
 from langchain_aws.chat_models import ChatBedrockConverse
 from langchain_aws.embeddings import BedrockEmbeddings

@@ -1,4 +1,8 @@
-"""Dataset utilities for agent testing."""
+"""Dataset utilities for agent testing.
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+"""
 
 import json
 import yaml
