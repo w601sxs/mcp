@@ -2,11 +2,11 @@
 
 import os
 import pytest
-from pathlib import Path
 from awslabs.agent_test.agent_test_dataset import AgentEvaluationDataset, AgentTestCase
 from awslabs.agent_test.agent_tool_test import AgentToolTest
 from deepeval import assert_test
 from deepeval.metrics.tool_correctness.tool_correctness import ToolCorrectnessMetric
+from pathlib import Path
 
 
 # Get MCP settings from environment or use defaults
@@ -15,8 +15,8 @@ MCP_ARGS = ['mcp-server-time', '--local-timezone=US/Pacific']
 # Find examples directory relative to this file
 THIS_DIR = Path(__file__).parent
 ROOT_DIR = THIS_DIR.parent
-EXAMPLES_DIR = ROOT_DIR / "examples"
-DEFAULT_TEST_DATASET = str(EXAMPLES_DIR / "agent_test_cases.yaml")
+EXAMPLES_DIR = ROOT_DIR / 'examples'
+DEFAULT_TEST_DATASET = str(EXAMPLES_DIR / 'agent_test_cases.yaml')
 
 # Get dataset path from environment or use default
 AGENT_TEST_DATASET = os.environ.get('AGENT_TEST_DATASET', DEFAULT_TEST_DATASET)
@@ -46,7 +46,7 @@ def test_dataset():
         elif dataset_path.endswith('.json'):
             return AgentEvaluationDataset.from_json(dataset_path)
     else:
-        print(f"Warning: Dataset file not found at {dataset_path}, using default test cases")
+        print(f'Warning: Dataset file not found at {dataset_path}, using default test cases')
 
     # Otherwise use some default test cases with time MCP server tools
     return AgentEvaluationDataset(

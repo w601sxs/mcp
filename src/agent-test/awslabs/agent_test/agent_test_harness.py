@@ -24,7 +24,7 @@ class AgentTestHarness:
         mcp_command: str = 'uvx',
     ):
         """Initialize the AgentTestHarness.
-        
+
         Args:
             mcp_args: List of arguments to pass to the MCP server
             mcp_env: Optional environment variables to set for the MCP server
