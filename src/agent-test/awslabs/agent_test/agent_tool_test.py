@@ -5,12 +5,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import os
+import sys
 from awslabs.agent_test.agent_test_harness import AgentTestHarness
 from deepeval.metrics.tool_correctness.tool_correctness import ToolCorrectnessMetric
 from deepeval.test_case.llm_test_case import LLMTestCase, ToolCall
 from langchain_core.messages import AIMessage
 from loguru import logger
 from typing import Any, Dict, List, Optional
+
+
+logger.remove()
+logger.add(sys.stderr, level=os.getenv('LOG_LEVEL', 'INFO'))
 
 
 class AgentToolTest:
@@ -76,7 +82,10 @@ class AgentToolTest:
         # Invoke the agent with the prompt
         response = await agent.ainvoke({'messages': [{'role': 'user', 'content': prompt}]})
 
-        logger.info(f'Response: {response}')
+        logger.debug(f'Response: {response["messages"]}')
+
+        for message in response['messages']:
+            message.pretty_print()
 
         # Extract actual tools called from response messages
         # Use a dictionary to deduplicate calls by tool_call_id

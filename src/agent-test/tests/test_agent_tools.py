@@ -90,7 +90,7 @@ def yaml_test_cases():
     logger.info(f'Loaded {len(dataset.test_cases)} test cases from YAML')
 
     # For this test, let's just use the first two test cases from the file
-    test_cases = dataset.test_cases[:2]
+    test_cases = dataset.test_cases
     for tc in test_cases:
         logger.info(f'Using test case: "{tc.input}" (expects: {tc.expected_tools})')
 

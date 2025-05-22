@@ -21,5 +21,5 @@
   description: "Testing time conversion between Tokyo and Berlin"
 
 - input: "What's the time difference between Sydney and Paris?"
-  expected_tools: ["convert_time"]
+  expected_tools: ["get_current_time"]
   description: "Testing time zone difference calculation"
