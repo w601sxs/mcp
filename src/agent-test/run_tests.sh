@@ -1,6 +1,17 @@
 #!/bin/bash
 # Simple script to test agent-test implementation
 
+# Parse command-line arguments
+RUN_INTEG=false
+for arg in "$@"; do
+  case $arg in
+  --integ)
+    RUN_INTEG=true
+    shift
+    ;;
+  esac
+done
+
 # Install dependencies using uv
 echo "Installing dependencies..."
 cd "$(dirname "$0")"
@@ -15,6 +26,12 @@ fi
 echo "Installing package dependencies..."
 uv sync --all-groups
 
-# Run pytest using uv run
-echo "Running tests..."
-uv run pytest tests/test_agent_tools.py -v
+# Run tests based on requested type
+if [ "$RUN_INTEG" = true ]; then
+  echo "Running integration tests..."
+  uv run pytest integ_tests/test_agent_tools.py -v
+else
+  echo "Running unit tests..."
+  uv run pytest tests/test_yaml_loading.py -v
+  # Note: test_agent_tools.py moved to integ_tests/ directory
+fi
