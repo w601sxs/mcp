@@ -33,5 +33,4 @@ if [ "$RUN_INTEG" = true ]; then
 else
   echo "Running unit tests..."
   uv run pytest tests/test_yaml_loading.py -v
-  # Note: test_agent_tools.py moved to integ_tests/ directory
 fi
