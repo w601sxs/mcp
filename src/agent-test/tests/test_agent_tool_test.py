@@ -403,8 +403,7 @@ class TestAgentToolTest:
         mock_harness.get_agent.return_value = mock_agent
 
         # Mock messages with pretty_print method
-        mock_message = unittest.mock.Mock()
-        mock_message.pretty_print = unittest.mock.Mock()
+        mock_message = unittest.mock.Mock(spec=AIMessage)
 
         mock_agent.ainvoke.return_value = {
             'messages': [mock_message, AIMessage(content='Response')]
