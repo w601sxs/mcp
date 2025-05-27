@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 from deepeval.models.base_model import DeepEvalBaseEmbeddingModel, DeepEvalBaseLLM
 from langchain_aws.chat_models import ChatBedrockConverse
 from langchain_aws.embeddings import BedrockEmbeddings
-from pydantic import BaseModel
 from typing import List
 
 
@@ -26,7 +25,7 @@ class BedrockDeepEvalEmbeddingModel(DeepEvalBaseEmbeddingModel):
         self.model_id = model_id
         self.region_name = region_name
 
-    def load_model(self):
+    def load_model(self) -> BedrockEmbeddings:  # type: ignore[override]
         """Implements the abstract method from the base class."""
         return BedrockEmbeddings(
             model_id=self.model_id,
@@ -92,27 +91,25 @@ class BedrockDeepEvalLLM(DeepEvalBaseLLM):
             top_p=top_p,
         )
 
-    def load_model(self):
+    def load_model(self) -> ChatBedrockConverse:  # type: ignore[override]
         """Implements the abstract method from the base class."""
         return self.model
 
-    def generate(self, prompt: str, schema: BaseModel) -> BaseModel:
+    def generate(self, prompt: str) -> str:
         """Implements the abstract method from the base class."""
-        structured_output_model = self.model.with_structured_output(schema)  # type: ignore
         messages = [{'role': 'user', 'content': prompt}]
         try:
-            response = structured_output_model.invoke(messages)
-            return response  # type: ignore
+            response = self.model.invoke(messages)
+            return response.content  # type: ignore
         except Exception as e:
             raise e
 
-    async def a_generate(self, prompt: str, schema: BaseModel) -> BaseModel:
+    async def a_generate(self, prompt: str) -> str:
         """Implements the abstract method from the base class."""
-        structured_output_model = self.model.with_structured_output(schema)  # type: ignore
         messages = [{'role': 'user', 'content': prompt}]
         try:
-            response = await structured_output_model.ainvoke(messages)
-            return response  # type: ignore
+            response = await self.model.ainvoke(messages)
+            return response.content  # type: ignore
         except Exception as e:
             raise e
 

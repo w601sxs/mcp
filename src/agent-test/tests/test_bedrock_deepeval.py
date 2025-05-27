@@ -172,39 +172,34 @@ class TestBedrockDeepEvalLLM:
         """Test generate method."""
         # Setup mock
         mock_model_instance = mock_chat_bedrock.return_value
-        mock_structured_model = unittest.mock.Mock()
-        mock_model_instance.with_structured_output.return_value = mock_structured_model
-        mock_structured_model.invoke.return_value = SampleModel(message='test response', score=0.8)
+        mock_response = unittest.mock.Mock()
+        mock_response.content = 'test response content'
+        mock_model_instance.invoke.return_value = mock_response
 
         model = BedrockDeepEvalLLM(model_id='test-model', region_name='us-west-2')
 
-        result = model.generate('test prompt', SampleModel)
+        result = model.generate('test prompt')
 
         # Verify calls
-        mock_model_instance.with_structured_output.assert_called_once_with(SampleModel)
-        mock_structured_model.invoke.assert_called_once_with(
+        mock_model_instance.invoke.assert_called_once_with(
             [{'role': 'user', 'content': 'test prompt'}]
         )
 
         # Verify result
-        assert isinstance(result, SampleModel)
-        assert result.message == 'test response'
-        assert result.score == 0.8
+        assert result == 'test response content'
 
     @unittest.mock.patch('awslabs.agent_test.bedrock_deepeval.ChatBedrockConverse')
     def test_generate_exception(self, mock_chat_bedrock):
         """Test generate method with exception."""
         # Setup mock to raise exception
         mock_model_instance = mock_chat_bedrock.return_value
-        mock_structured_model = unittest.mock.Mock()
-        mock_model_instance.with_structured_output.return_value = mock_structured_model
         test_exception = Exception('Test error')
-        mock_structured_model.invoke.side_effect = test_exception
+        mock_model_instance.invoke.side_effect = test_exception
 
         model = BedrockDeepEvalLLM(model_id='test-model', region_name='us-west-2')
 
         with pytest.raises(Exception) as exc_info:
-            model.generate('test prompt', SampleModel)
+            model.generate('test prompt')
 
         assert exc_info.value == test_exception
 
@@ -214,29 +209,26 @@ class TestBedrockDeepEvalLLM:
         """Test a_generate async method."""
         # Setup mock
         mock_model_instance = mock_chat_bedrock.return_value
-        mock_structured_model = unittest.mock.Mock()
-        mock_model_instance.with_structured_output.return_value = mock_structured_model
         # Return a coroutine for async call
         import asyncio
 
         async_return = asyncio.Future()
-        async_return.set_result(SampleModel(message='async test response', score=0.9))
-        mock_structured_model.ainvoke.return_value = async_return
+        mock_response = unittest.mock.Mock()
+        mock_response.content = 'async test response content'
+        async_return.set_result(mock_response)
+        mock_model_instance.ainvoke.return_value = async_return
 
         model = BedrockDeepEvalLLM(model_id='test-model', region_name='us-west-2')
 
-        result = await model.a_generate('async test prompt', SampleModel)
+        result = await model.a_generate('async test prompt')
 
         # Verify calls
-        mock_model_instance.with_structured_output.assert_called_once_with(SampleModel)
-        mock_structured_model.ainvoke.assert_called_once_with(
+        mock_model_instance.ainvoke.assert_called_once_with(
             [{'role': 'user', 'content': 'async test prompt'}]
         )
 
         # Verify result
-        assert isinstance(result, SampleModel)
-        assert result.message == 'async test response'
-        assert result.score == 0.9
+        assert result == 'async test response content'
 
     @unittest.mock.patch('awslabs.agent_test.bedrock_deepeval.ChatBedrockConverse')
     @pytest.mark.asyncio
@@ -244,14 +236,12 @@ class TestBedrockDeepEvalLLM:
         """Test a_generate async method with exception."""
         # Setup mock to raise exception
         mock_model_instance = mock_chat_bedrock.return_value
-        mock_structured_model = unittest.mock.Mock()
-        mock_model_instance.with_structured_output.return_value = mock_structured_model
         test_exception = Exception('Async test error')
-        mock_structured_model.ainvoke.side_effect = test_exception
+        mock_model_instance.ainvoke.side_effect = test_exception
 
         model = BedrockDeepEvalLLM(model_id='test-model', region_name='us-west-2')
 
         with pytest.raises(Exception) as exc_info:
-            await model.a_generate('async test prompt', SampleModel)
+            await model.a_generate('async test prompt')
 
         assert exc_info.value == test_exception

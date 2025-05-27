@@ -32,5 +32,5 @@ if [ "$RUN_INTEG" = true ]; then
   uv run pytest integ_tests/test_agent_tools.py -v
 else
   echo "Running unit tests..."
-  uv run pytest tests/test_yaml_loading.py -v
+  uv run pytest tests/ --cov=awslabs -v
 fi

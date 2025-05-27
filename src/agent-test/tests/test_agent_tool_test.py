@@ -111,12 +111,12 @@ class TestAgentToolTest:
         assert isinstance(result, LLMTestCase)
         assert result.input == 'What is the weather?'
         assert result.actual_output == 'The weather is sunny'
-        assert len(result.tools_called) == 2
-        assert result.tools_called[0].name == 'get_weather'
-        assert result.tools_called[1].name == 'get_forecast'
-        assert len(result.expected_tools) == 2
-        assert result.expected_tools[0].name == 'get_weather'
-        assert result.expected_tools[1].name == 'get_forecast'
+        assert len(result.tools_called or []) == 2
+        assert (result.tools_called or [])[0].name == 'get_weather'
+        assert (result.tools_called or [])[1].name == 'get_forecast'
+        assert len(result.expected_tools or []) == 2
+        assert (result.expected_tools or [])[0].name == 'get_weather'
+        assert (result.expected_tools or [])[1].name == 'get_forecast'
 
     @pytest.mark.asyncio
     async def test_create_test_case_with_dict_tool_calls(self):
@@ -154,9 +154,9 @@ class TestAgentToolTest:
         assert isinstance(result, LLMTestCase)
         assert result.input == 'Get time'
         assert result.actual_output == 'Custom output'  # Should use provided output
-        assert len(result.tools_called) == 2
-        assert result.tools_called[0].name == 'get_time'
-        assert result.tools_called[1].name == 'get_timezone'
+        assert len(result.tools_called or []) == 2
+        assert (result.tools_called or [])[0].name == 'get_time'
+        assert (result.tools_called or [])[1].name == 'get_timezone'
 
     @pytest.mark.asyncio
     async def test_create_test_case_with_duplicate_tool_calls(self):
@@ -191,8 +191,8 @@ class TestAgentToolTest:
         )
 
         # Should only have one tool call (deduplicated by ID)
-        assert len(result.tools_called) == 1
-        assert result.tools_called[0].name == 'get_forecast'  # Last one wins
+        assert len(result.tools_called or []) == 1
+        assert (result.tools_called or [])[0].name == 'get_forecast'  # Last one wins
 
     @pytest.mark.asyncio
     async def test_create_test_case_with_no_tool_calls(self):
@@ -217,9 +217,9 @@ class TestAgentToolTest:
         result = await tool_test.create_test_case(prompt='Hello', expected_tools=['some_tool'])
 
         # Verify the test case
-        assert len(result.tools_called) == 0
-        assert len(result.expected_tools) == 1
-        assert result.expected_tools[0].name == 'some_tool'
+        assert len(result.tools_called or []) == 0
+        assert len(result.expected_tools or []) == 1
+        assert (result.expected_tools or [])[0].name == 'some_tool'
 
     @pytest.mark.asyncio
     async def test_create_test_case_with_empty_messages(self):
@@ -241,7 +241,7 @@ class TestAgentToolTest:
         # Verify the test case
         assert result.input == 'Empty test'
         assert result.actual_output == ''
-        assert len(result.tools_called) == 0
+        assert len(result.tools_called or []) == 0
 
     @pytest.mark.asyncio
     async def test_create_test_case_without_context_manager(self):
@@ -388,8 +388,8 @@ class TestAgentToolTest:
         )
 
         # Should only count the AIMessage tool call, not the ToolMessage
-        assert len(result.tools_called) == 1
-        assert result.tools_called[0].name == 'get_data'
+        assert len(result.tools_called or []) == 1
+        assert (result.tools_called or [])[0].name == 'get_data'
 
     @pytest.mark.asyncio
     async def test_create_test_case_logs_response_messages(self):
