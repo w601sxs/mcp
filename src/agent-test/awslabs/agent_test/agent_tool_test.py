@@ -85,7 +85,12 @@ class AgentToolTest:
         logger.debug(f'Response: {response["messages"]}')
 
         for message in response['messages']:
-            message.pretty_print()
+            # Handle both LangChain message objects and dictionary representations
+            if hasattr(message, 'pretty_print'):
+                message.pretty_print()
+            else:
+                # For dictionary messages, log them in a readable format
+                logger.debug(f'Message (dict): {message}')
 
         # Extract actual tools called from response messages
         # Use a dictionary to deduplicate calls by tool_call_id
