@@ -89,7 +89,6 @@ def yaml_test_cases():
     dataset = AgentEvaluationDataset.from_yaml(DEFAULT_TEST_DATASET)
     logger.info(f'Loaded {len(dataset.test_cases)} test cases from YAML')
 
-    # For this test, let's just use the first two test cases from the file
     test_cases = dataset.test_cases
     for tc in test_cases:
         logger.info(f'Using test case: "{tc.input}" (expects: {tc.expected_tools})')
