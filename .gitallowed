@@ -14,3 +14,7 @@ abcdef12-3456-7890-abcd-ef1234567890
 
 # Allow the short certificate ID pattern
 abcd1234
+
+# Allow npm package integrity hashes in pnpm-lock.yaml
+# These are SHA-512 hashes used to verify package integrity, not secrets
+resolution: {integrity: sha512-
