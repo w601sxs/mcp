@@ -1,0 +1,35 @@
+---
+title: Core Development Workflow
+description: Tools for core development workflow, including planning, documentation, and code research.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide essential tools for your core development workflow, helping you plan, access documentation, and research code repositories.
+
+<CardGrid>
+  <Card title="Core MCP Server" icon="rocket">
+    <div>
+      <p>Start here: intelligent planning and MCP server orchestration. The Core MCP Server manages and coordinates other MCP Servers in your environment, providing automatic installation, configuration, and management.</p>
+      <p class="tool-details">[Learn more](../../servers/core-mcp-server)</p>
+      <Badge text="Planning & Orchestration" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="AWS Documentation MCP Server" icon="document">
+    <div>
+      <p>Get latest AWS docs and API references. The AWS Documentation MCP Server provides access to AWS documentation and best practices.</p>
+      <p class="tool-details">[Learn more](../../servers/aws-documentation-mcp-server)</p>
+      <Badge text="Documentation" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Git Repo Research MCP Server" icon="github">
+    <div>
+      <p>Semantic search through codebases and repositories. A server for researching Git repositories using semantic search.</p>
+      <p class="tool-details">[Learn more](../../servers/git-repo-research-mcp-server)</p>
+      <Badge text="Code Research" size="small"/>
+    </div>
+  </Card>
+</CardGrid>

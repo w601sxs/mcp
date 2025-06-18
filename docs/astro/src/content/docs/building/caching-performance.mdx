@@ -1,0 +1,35 @@
+---
+title: Caching & Performance
+description: Tools for caching and performance optimization.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide tools for caching and performance optimization, helping you work with ElastiCache and MemoryDB on AWS.
+
+<CardGrid>
+  <Card title="Amazon ElastiCache MCP Server" icon="seti:db">
+    <div>
+      <p>Complete ElastiCache operations. A server for managing and interacting with Amazon ElastiCache resources.</p>
+      <p class="tool-details">[Learn more](../../servers/elasticache-mcp-server)</p>
+      <Badge text="ElastiCache" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Amazon ElastiCache / MemoryDB for Valkey MCP Server" icon="seti:db">
+    <div>
+      <p>Advanced data structures and caching with Valkey. The Amazon ElastiCache/MemoryDB Valkey MCP Server provides a natural language interface to interact with Valkey datastores.</p>
+      <p class="tool-details">[Learn more](../../servers/valkey-mcp-server)</p>
+      <Badge text="Valkey" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Amazon ElastiCache for Memcached MCP Server" icon="seti:db">
+    <div>
+      <p>High-speed caching operations. A server that provides natural language interface to interact with Amazon ElastiCache Memcached caches.</p>
+      <p class="tool-details">[Learn more](../../servers/memcached-mcp-server)</p>
+      <Badge text="Memcached" size="small"/>
+    </div>
+  </Card>
+</CardGrid>

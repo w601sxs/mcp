@@ -1,0 +1,35 @@
+---
+title: Business Services
+description: Tools for location services, cost analysis, and spend reporting.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide tools for location services, cost analysis, and spend reporting, helping you build conversational assistants that can provide business-relevant information.
+
+<CardGrid>
+  <Card title="Amazon Location Service MCP Server" icon="magnifier">
+    <div>
+      <p>Location search, geocoding, and business hours. A server for accessing AWS Location Service capabilities, focusing on place search, geographical coordinates, and route planning.</p>
+      <p class="tool-details">[Learn more](../../servers/aws-location-mcp-server)</p>
+      <Badge text="Location Services" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Cost Analysis MCP Server" icon="seti:shell">
+    <div>
+      <p>Answer cost questions and provide estimates. The Cost Analysis MCP Server enables AI assistants to analyze the cost of AWS services.</p>
+      <p class="tool-details">[Learn more](../../servers/cost-analysis-mcp-server)</p>
+      <Badge text="Cost Analysis" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="AWS Cost Explorer MCP Server" icon="seti:shell">
+    <div>
+      <p>Detailed cost analysis and spend reports. A server for interacting with AWS Cost Explorer to analyze AWS costs and usage data.</p>
+      <p class="tool-details">[Learn more](../../servers/cost-explorer-mcp-server)</p>
+      <Badge text="Cost Explorer" size="small"/>
+    </div>
+  </Card>
+</CardGrid>

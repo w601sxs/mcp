@@ -1,0 +1,36 @@
+---
+title: Application Development
+description: Tools for application development, including frontend development, diagramming, documentation, and API integration.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide tools for application development, helping you build frontend applications, create architecture diagrams, generate documentation, and integrate with APIs.
+
+<CardGrid>
+  <Card title="Frontend MCP Server" icon="figma">
+    <div>
+      <p>React and modern web development patterns with AWS integration. The Frontend MCP Server provides specialized tools for prototyping web applications with React and AWS Amplify.</p>
+      <p class="tool-details">[Learn more](../../servers/frontend-mcp-server)</p>
+      <Badge text="Frontend" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="AWS Diagram MCP Server" icon="pen">
+    <div>
+      <p>Generate architecture diagrams as you design. This MCP server seamlessly creates diagrams using the Python diagrams package DSL.</p>
+      <p class="tool-details">[Learn more](../../servers/aws-diagram-mcp-server)</p>
+      <Badge text="Diagramming" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Code Documentation Generation MCP Server" icon="document">
+    <div>
+      <p>Auto-generate docs from your codebase. The Code Documentation Generation MCP Server automatically generates comprehensive documentation for code repositories.</p>
+      <p class="tool-details">[Learn more](../../servers/code-doc-gen-mcp-server)</p>
+      <Badge text="Documentation" size="small"/>
+    </div>
+  </Card>
+
+</CardGrid>

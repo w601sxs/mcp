@@ -1,0 +1,35 @@
+---
+title: Infrastructure as Code
+description: Tools for infrastructure as code development, including CDK, Terraform, and CloudFormation.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide tools for infrastructure as code development, helping you define, deploy, and manage your AWS infrastructure using different IaC frameworks.
+
+<CardGrid>
+  <Card title="AWS CDK MCP Server" icon="rocket">
+    <div>
+      <p>CDK development with security best practices and compliance. The CDK MCP Server provides AWS Cloud Development Kit (CDK) best practices, infrastructure as code patterns, and security compliance with CDK Nag.</p>
+      <p class="tool-details">[Learn more](../../servers/cdk-mcp-server)</p>
+      <Badge text="CDK" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="AWS Terraform MCP Server" icon="seti:terraform">
+    <div>
+      <p>Terraform with integrated security scanning and best practices. The Terraform MCP Server enables AWS best practices, infrastructure as code patterns, and security compliance with Checkov.</p>
+      <p class="tool-details">[Learn more](../../servers/terraform-mcp-server)</p>
+      <Badge text="Terraform" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="AWS CloudFormation MCP Server" icon="rocket">
+    <div>
+      <p>Direct AWS resource management through Cloud Control API. A server for managing your AWS resources directly and through CloudFormation.</p>
+      <p class="tool-details">[Learn more](../../servers/cfn-mcp-server)</p>
+      <Badge text="CloudFormation" size="small"/>
+    </div>
+  </Card>
+</CardGrid>

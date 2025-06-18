@@ -1,0 +1,60 @@
+---
+---
+
+<div class="server-search-container">
+  <input 
+    type="text" 
+    id="server-search" 
+    placeholder="Search MCP servers..." 
+    class="server-search-input"
+  />
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('server-search');
+    const serverCards = document.querySelectorAll('.card-grid > .card');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        serverCards.forEach(card => {
+          const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
+          const description = card.querySelector('p')?.textContent?.toLowerCase() || '';
+          const badge = card.querySelector('.badge')?.textContent?.toLowerCase() || '';
+          
+          const isMatch = title.includes(searchTerm) || 
+                          description.includes(searchTerm) || 
+                          badge.includes(searchTerm);
+          
+          card.style.display = isMatch ? 'block' : 'none';
+        });
+      });
+    }
+  });
+</script>
+
+<style>
+  .server-search-container {
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .server-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background-color: var(--sl-color-bg);
+    color: var(--sl-color-text);
+  }
+  
+  .server-search-input:focus {
+    outline: none;
+    border-color: var(--sl-color-accent);
+    box-shadow: 0 0 0 2px var(--sl-color-accent-low);
+  }
+</style>

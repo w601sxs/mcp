@@ -1,0 +1,27 @@
+---
+title: Content Processing & Generation
+description: Tools for generating images and analyzing documents, images, and media.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+These MCP servers provide tools for generating images and analyzing various types of content, helping you build conversational assistants that can create and process visual and textual information.
+
+<CardGrid>
+  <Card title="Amazon Nova Canvas MCP Server" icon="star">
+    <div>
+      <p>Generate images from text descriptions and color palettes. The Nova Canvas MCP Server enables AI assistants to generate images using Amazon Nova Canvas.</p>
+      <p class="tool-details">[Learn more](../../servers/nova-canvas-mcp-server)</p>
+      <Badge text="Image Generation" size="small"/>
+    </div>
+  </Card>
+  
+  <Card title="Amazon Bedrock Data Automation MCP Server" icon="star">
+    <div>
+      <p>Analyze uploaded documents, images, and media. A Model Context Protocol (MCP) server for Amazon Bedrock Data Automation that enables AI assistants to analyze documents, images, videos, and audio files using Amazon Bedrock Data Automation projects.</p>
+      <p class="tool-details">[Learn more](../../servers/aws-bedrock-data-automation-mcp-server)</p>
+      <Badge text="Content Analysis" size="small"/>
+    </div>
+  </Card>
+</CardGrid>
