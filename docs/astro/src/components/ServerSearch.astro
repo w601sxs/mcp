@@ -2,36 +2,94 @@
 ---
 
 <div class="server-search-container">
-  <input 
-    type="text" 
-    id="server-search" 
-    placeholder="Search MCP servers..." 
+  <input
+    type="text"
+    id="server-search"
+    placeholder="Search MCP servers..."
     class="server-search-input"
   />
+  <div class="filter-buttons">
+    <button id="filter-all" class="filter-button active">All</button>
+    <button id="filter-iac" class="filter-button">Infrastructure as Code</button>
+  </div>
 </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('server-search');
     const serverCards = document.querySelectorAll('.card-grid > .card');
-    
+    const filterAllButton = document.getElementById('filter-all');
+    const filterIaCButton = document.getElementById('filter-iac');
+
+    // Function to filter cards based on search term and category
+    function filterCards(searchTerm = '', category = '') {
+      serverCards.forEach(card => {
+        const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
+        const description = card.querySelector('p')?.textContent?.toLowerCase() || '';
+        const badge = card.querySelector('.badge')?.textContent?.toLowerCase() || '';
+
+        // Check if card matches search term
+        const matchesSearch = searchTerm === '' ||
+                             title.includes(searchTerm) ||
+                             description.includes(searchTerm) ||
+                             badge.includes(searchTerm);
+
+        // Check if card matches category filter
+        let matchesCategory = true;
+        if (category === 'iac') {
+          // Only show Infrastructure as Code servers (CDK, Terraform, CloudFormation)
+          matchesCategory =
+            title.includes('cdk') ||
+            title.includes('terraform') ||
+            title.includes('cloudformation') ||
+            badge.includes('infrastructure development');
+        }
+
+        card.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
+      });
+    }
+
+    // Check URL parameters for filter
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get('filter');
+
+    if (filterParam === 'iac') {
+      filterIaCButton.classList.add('active');
+      filterAllButton.classList.remove('active');
+      filterCards('', 'iac');
+    }
+
+    // Search input event
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        
-        serverCards.forEach(card => {
-          const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
-          const description = card.querySelector('p')?.textContent?.toLowerCase() || '';
-          const badge = card.querySelector('.badge')?.textContent?.toLowerCase() || '';
-          
-          const isMatch = title.includes(searchTerm) || 
-                          description.includes(searchTerm) || 
-                          badge.includes(searchTerm);
-          
-          card.style.display = isMatch ? 'block' : 'none';
-        });
+        const activeCategory = filterIaCButton.classList.contains('active') ? 'iac' : '';
+        filterCards(searchTerm, activeCategory);
       });
     }
+
+    // Filter button events
+    filterAllButton.addEventListener('click', () => {
+      filterAllButton.classList.add('active');
+      filterIaCButton.classList.remove('active');
+      filterCards(searchInput?.value.toLowerCase() || '');
+
+      // Update URL without page reload
+      const url = new URL(window.location);
+      url.searchParams.delete('filter');
+      window.history.pushState({}, '', url);
+    });
+
+    filterIaCButton.addEventListener('click', () => {
+      filterIaCButton.classList.add('active');
+      filterAllButton.classList.remove('active');
+      filterCards(searchInput?.value.toLowerCase() || '', 'iac');
+
+      // Update URL without page reload
+      const url = new URL(window.location);
+      url.searchParams.set('filter', 'iac');
+      window.history.pushState({}, '', url);
+    });
   });
 </script>
 
@@ -41,7 +99,7 @@
     width: 100%;
     max-width: 600px;
   }
-  
+
   .server-search-input {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -50,11 +108,39 @@
     border-radius: 0.5rem;
     background-color: var(--sl-color-bg);
     color: var(--sl-color-text);
+    margin-bottom: 1rem;
   }
-  
+
   .server-search-input:focus {
     outline: none;
     border-color: var(--sl-color-accent);
     box-shadow: 0 0 0 2px var(--sl-color-accent-low);
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .filter-button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.25rem;
+    background-color: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .filter-button:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .filter-button.active {
+    background-color: var(--sl-color-accent);
+    color: white;
+    border-color: var(--sl-color-accent);
   }
 </style>
