@@ -17,12 +17,12 @@ Resource Management module for ECS MCP Server.
 This module provides tools and prompts for managing ECS resources.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
-from awslabs.ecs_mcp_server.api.resource_management import ecs_resource_management
+from awslabs.ecs_mcp_server.api.resource_management import ecs_api_operation
 
 
 def register_module(mcp: FastMCP) -> None:
@@ -30,50 +30,90 @@ def register_module(mcp: FastMCP) -> None:
 
     @mcp.tool(name="ecs_resource_management", annotations=None)
     async def mcp_ecs_resource_management(
-        action: str = Field(
+        api_operation: str = Field(
             ...,
-            description="Action to perform (list, describe)",
+            description="The ECS API operation to execute (CamelCase)",
         ),
-        resource_type: str = Field(
+        api_params: Dict[str, Any] = Field(
             ...,
-            description=(
-                "Type of resource (cluster, service, task, task_definition, "
-                "container_instance, capacity_provider)"
-            ),
+            description="Dictionary of parameters to pass to the API operation",
         ),
-        identifier: Optional[str] = None,
-        filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Read-only tool for managing ECS resources.
-
-        This tool provides a consistent interface to list and describe various ECS resources.
-
-        USAGE EXAMPLES:
-        - List all clusters: ecs_resource_management("list", "cluster")
-        - Describe a cluster: ecs_resource_management("describe", "cluster", "my-cluster")
-        - List services in cluster: ecs_resource_management("list", "service",
-          filters={"cluster": "my-cluster"})
-        - List tasks by status: ecs_resource_management("list", "task",
-          filters={"cluster": "my-cluster", "status": "RUNNING"})
-        - Describe a task: ecs_resource_management("describe", "task", "task-id",
-          filters={"cluster": "my-cluster"})
-        - List task definitions: ecs_resource_management("list", "task_definition",
-          filters={"family": "nginx"})
-        - Describe a task definition: ecs_resource_management("describe", "task_definition",
-          "family:revision")
-
+        Execute ECS API operations directly.
+        
+        This tool allows direct execution of ECS API operations using boto3.
+        
+        Supported operations:
+        - CreateCapacityProvider
+        - CreateCluster
+        - CreateService
+        - CreateTaskSet
+        - DeleteAccountSetting
+        - DeleteAttributes
+        - DeleteCapacityProvider
+        - DeleteCluster
+        - DeleteService
+        - DeleteTaskDefinitions
+        - DeleteTaskSet
+        - DeregisterContainerInstance
+        - DeregisterTaskDefinition
+        - DescribeCapacityProviders
+        - DescribeClusters
+        - DescribeContainerInstances
+        - DescribeServiceDeployments
+        - DescribeServiceRevisions
+        - DescribeServices
+        - DescribeTaskDefinition
+        - DescribeTasks
+        - DescribeTaskSets
+        - DiscoverPollEndpoint
+        - ExecuteCommand
+        - GetTaskProtection
+        - ListAccountSettings
+        - ListAttributes
+        - ListClusters
+        - ListContainerInstances
+        - ListServiceDeployments
+        - ListServices
+        - ListServicesByNamespace
+        - ListTagsForResource
+        - ListTaskDefinitionFamilies
+        - ListTaskDefinitions
+        - ListTasks
+        - PutAccountSetting
+        - PutAccountSettingDefault
+        - PutAttributes
+        - PutClusterCapacityProviders
+        - RegisterContainerInstance
+        - RegisterTaskDefinition
+        - RunTask
+        - StartTask
+        - StopServiceDeployment
+        - StopTask
+        - SubmitAttachmentStateChanges
+        - SubmitContainerStateChange
+        - SubmitTaskStateChange
+        - TagResource
+        - UntagResource
+        - UpdateCapacityProvider
+        - UpdateCluster
+        - UpdateClusterSettings
+        - UpdateContainerAgent
+        - UpdateContainerInstancesState
+        - UpdateService
+        - UpdateServicePrimaryTaskSet
+        - UpdateTaskProtection
+        - UpdateTaskSet
+        
         Parameters:
-            action: Action to perform (list, describe)
-            resource_type: Type of resource (cluster, service, task, task_definition,
-                          container_instance, capacity_provider)
-            identifier: Resource identifier (name or ARN) for describe actions (optional)
-            filters: Filters for list operations (optional)
-
+            api_operation: The ECS API operation to execute (CamelCase)
+            api_params: Dictionary of parameters to pass to the API operation
+            
         Returns:
-            Dictionary containing the requested ECS resources
+            Dictionary containing the API response
         """
-        return await ecs_resource_management(action, resource_type, identifier, filters)
+        return await ecs_api_operation(api_operation, api_params)
 
     # Prompt patterns for resource management
     @mcp.prompt("list ecs resources")
