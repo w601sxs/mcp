@@ -1,5 +1,14 @@
 ---
 import FinchMCP from '../../src/finch-mcp-server/README.md';
 ---
-<FinchMCP>
-</FinchMCP>
+
+<div class="readme-content">
+  <style>
+    /* Hide the first h1 heading only within this component */
+    .readme-content :global(h1:first-of-type) {
+      display: none;
+    }
+  </style>
+
+  <FinchMCP />
+</div>

@@ -1,5 +1,14 @@
 ---
 import PostgresMCP from '../../src/postgres-mcp-server/README.md';
 ---
-<PostgresMCP>
-</PostgresMCP>
+
+<div class="readme-content">
+  <style>
+    /* Hide the first h1 heading only within this component */
+    .readme-content :global(h1:first-of-type) {
+      display: none;
+    }
+  </style>
+
+  <PostgresMCP />
+</div>
