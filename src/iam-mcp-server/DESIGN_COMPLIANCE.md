@@ -99,11 +99,11 @@ All tool parameters use proper Pydantic Field definitions:
 async def list_users(
     ctx: CallToolResult,
     path_prefix: Optional[str] = Field(
-        description='Path prefix to filter users (e.g., "/division_abc/")', 
+        description='Path prefix to filter users (e.g., "/division_abc/")',
         default=None
     ),
     max_items: int = Field(
-        description='Maximum number of users to return', 
+        description='Maximum number of users to return',
         default=100
     ),
 ) -> UsersListResponse:
@@ -228,7 +228,7 @@ All functions include comprehensive docstrings following Google style:
 
 ```python
 """Get detailed information about a specific IAM user.
-    
+
 This tool retrieves comprehensive information about an IAM user including
 attached policies, group memberships, and access keys. Use this to get
 a complete picture of a user's permissions and configuration.
@@ -241,7 +241,7 @@ a complete picture of a user's permissions and configuration.
 Args:
     ctx: MCP context for error reporting
     user_name: The name of the IAM user
-    
+
 Returns:
     UserDetailsResponse containing comprehensive user information
 """
@@ -255,12 +255,12 @@ mcp = FastMCP(
     'awslabs.iam-mcp-server',
     instructions="""
     # AWS IAM MCP Server
-    
+
     ## Core Features:
     1. **User Management**: Create, list, update, and delete IAM users
     2. **Role Management**: Create, list, update, and delete IAM roles
     ...
-    
+
     ## Security Best Practices:
     - Always follow the principle of least privilege
     - Regularly rotate access keys

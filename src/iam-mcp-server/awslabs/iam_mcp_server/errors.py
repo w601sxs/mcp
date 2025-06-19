@@ -19,8 +19,14 @@ from botocore.exceptions import ClientError as BotoClientError
 
 class IamMcpError(Exception):
     """Base exception for IAM MCP Server errors."""
-    
-    def __init__(self, message: str, error_code: str = "IamMcpError"):
+
+    def __init__(self, message: str, error_code: str = 'IamMcpError'):
+        """Initialize the IAM MCP error.
+
+        Args:
+            message: Error message
+            error_code: Error code identifier
+        """
         self.message = message
         self.error_code = error_code
         super().__init__(self.message)
@@ -28,45 +34,65 @@ class IamMcpError(Exception):
 
 class IamClientError(IamMcpError):
     """Exception for IAM client-side errors."""
-    
+
     def __init__(self, message: str):
-        super().__init__(message, "IamClientError")
+        """Initialize the IAM client error.
+
+        Args:
+            message: Error message
+        """
+        super().__init__(message, 'IamClientError')
 
 
 class IamPermissionError(IamMcpError):
     """Exception for IAM permission-related errors."""
-    
+
     def __init__(self, message: str):
-        super().__init__(message, "IamPermissionError")
+        """Initialize the IAM permission error.
+
+        Args:
+            message: Error message
+        """
+        super().__init__(message, 'IamPermissionError')
 
 
 class IamResourceNotFoundError(IamMcpError):
     """Exception for IAM resource not found errors."""
-    
+
     def __init__(self, message: str):
-        super().__init__(message, "IamResourceNotFoundError")
+        """Initialize the IAM resource not found error.
+
+        Args:
+            message: Error message
+        """
+        super().__init__(message, 'IamResourceNotFoundError')
 
 
 class IamValidationError(IamMcpError):
     """Exception for IAM validation errors."""
-    
+
     def __init__(self, message: str):
-        super().__init__(message, "IamValidationError")
+        """Initialize the IAM validation error.
+
+        Args:
+            message: Error message
+        """
+        super().__init__(message, 'IamValidationError')
 
 
 def handle_iam_error(error: Exception) -> IamMcpError:
     """Handle IAM-specific errors and return standardized error responses.
-    
+
     Args:
         error: The exception that was raised
-        
+
     Returns:
         Standardized IAM MCP error
     """
     if isinstance(error, BotoClientError):
         error_code = error.response.get('Error', {}).get('Code', 'Unknown')
         error_message = error.response.get('Error', {}).get('Message', str(error))
-        
+
         # Handle common AWS IAM error patterns
         if error_code in ['AccessDenied', 'AccessDeniedException']:
             return IamPermissionError(
@@ -114,11 +140,11 @@ def handle_iam_error(error: Exception) -> IamMcpError:
             )
         else:
             return IamMcpError(f'AWS IAM Error ({error_code}): {error_message}', error_code)
-    
+
     elif isinstance(error, IamMcpError):
         # Already a handled IAM MCP error, return as-is
         return error
-    
+
     else:
         # Generic error handling
         return IamMcpError(f'Unexpected error: {str(error)}', 'UnexpectedError')

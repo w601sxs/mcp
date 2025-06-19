@@ -19,31 +19,31 @@ from typing import Optional
 
 class Context:
     """Context class for managing server state and configuration."""
-    
+
     _readonly: bool = False
     _region: Optional[str] = None
-    
+
     @classmethod
     def initialize(cls, readonly: bool = False, region: Optional[str] = None):
         """Initialize the context with configuration options.
-        
+
         Args:
             readonly: Whether to run in read-only mode (prevents mutations)
             region: AWS region to use for operations
         """
         cls._readonly = readonly
         cls._region = region
-    
+
     @classmethod
     def is_readonly(cls) -> bool:
         """Check if the server is running in read-only mode."""
         return cls._readonly
-    
+
     @classmethod
     def get_region(cls) -> Optional[str]:
         """Get the configured AWS region."""
         return cls._region
-    
+
     @classmethod
     def set_region(cls, region: str):
         """Set the AWS region."""
