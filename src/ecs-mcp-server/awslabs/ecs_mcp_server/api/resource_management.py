@@ -119,10 +119,30 @@ async def ecs_api_operation(
         
     Returns:
         Dictionary containing the API response
+        
+    Note:
+        Operations starting with "Describe" or "List" are read-only.
+        All other operations require WRITE permission (ALLOW_WRITE=true).
     """
     # Validate the API operation
     if api_operation not in SUPPORTED_ECS_OPERATIONS:
         raise ValueError(f"Unsupported API operation: {api_operation}. Must be one of: {', '.join(SUPPORTED_ECS_OPERATIONS)}")
+    
+    # Check if this is a write operation (not starting with "Describe" or "List")
+    if not api_operation.startswith("Describe") and not api_operation.startswith("List"):
+        # Import here to avoid circular imports
+        from awslabs.ecs_mcp_server.utils.config import get_config
+        
+        # Check if write operations are allowed
+        config = get_config()
+        if not config.get("allow-write", False):
+            return {
+                "status": "error",
+                "error": (
+                    f"Operation {api_operation} requires WRITE permission. "
+                    f"Set ALLOW_WRITE=true in your environment to enable write operations."
+                )
+            }
     
     logger.info(f"Executing ECS API operation: {api_operation} with params: {api_params}")
     

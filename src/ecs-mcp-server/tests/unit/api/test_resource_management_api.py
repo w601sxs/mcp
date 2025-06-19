@@ -354,9 +354,13 @@ class TestEcsResourceManagementAPI:
         assert result["capacityProviders"][0]["name"] == "FARGATE"
 
     @pytest.mark.anyio
+    @patch("awslabs.ecs_mcp_server.utils.config.get_config")
     @patch("awslabs.ecs_mcp_server.api.resource_management.get_aws_client")
-    async def test_ecs_api_operation_create_service(self, mock_get_client):
+    async def test_ecs_api_operation_create_service(self, mock_get_client, mock_get_config):
         """Test ecs_api_operation function with CreateService operation."""
+        # Mock get_config to return allow-write=True
+        mock_get_config.return_value = {"allow-write": True}
+        
         # Mock get_aws_client
         mock_ecs = MagicMock()
         mock_ecs.create_service.return_value = {

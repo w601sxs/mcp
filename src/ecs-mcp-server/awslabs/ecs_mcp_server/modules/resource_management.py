@@ -44,67 +44,71 @@ def register_module(mcp: FastMCP) -> None:
         
         This tool allows direct execution of ECS API operations using boto3.
         
+        PERMISSIONS:
+        - Operations starting with "Describe" or "List" are read-only
+        - All other operations require WRITE permission (ALLOW_WRITE=true)
+        
         Supported operations:
-        - CreateCapacityProvider
-        - CreateCluster
-        - CreateService
-        - CreateTaskSet
-        - DeleteAccountSetting
-        - DeleteAttributes
-        - DeleteCapacityProvider
-        - DeleteCluster
-        - DeleteService
-        - DeleteTaskDefinitions
-        - DeleteTaskSet
-        - DeregisterContainerInstance
-        - DeregisterTaskDefinition
-        - DescribeCapacityProviders
-        - DescribeClusters
-        - DescribeContainerInstances
-        - DescribeServiceDeployments
-        - DescribeServiceRevisions
-        - DescribeServices
-        - DescribeTaskDefinition
-        - DescribeTasks
-        - DescribeTaskSets
-        - DiscoverPollEndpoint
-        - ExecuteCommand
-        - GetTaskProtection
-        - ListAccountSettings
-        - ListAttributes
-        - ListClusters
-        - ListContainerInstances
-        - ListServiceDeployments
-        - ListServices
-        - ListServicesByNamespace
-        - ListTagsForResource
-        - ListTaskDefinitionFamilies
-        - ListTaskDefinitions
-        - ListTasks
-        - PutAccountSetting
-        - PutAccountSettingDefault
-        - PutAttributes
-        - PutClusterCapacityProviders
-        - RegisterContainerInstance
-        - RegisterTaskDefinition
-        - RunTask
-        - StartTask
-        - StopServiceDeployment
-        - StopTask
-        - SubmitAttachmentStateChanges
-        - SubmitContainerStateChange
-        - SubmitTaskStateChange
-        - TagResource
-        - UntagResource
-        - UpdateCapacityProvider
-        - UpdateCluster
-        - UpdateClusterSettings
-        - UpdateContainerAgent
-        - UpdateContainerInstancesState
-        - UpdateService
-        - UpdateServicePrimaryTaskSet
-        - UpdateTaskProtection
-        - UpdateTaskSet
+        - CreateCapacityProvider (requires WRITE permission)
+        - CreateCluster (requires WRITE permission)
+        - CreateService (requires WRITE permission)
+        - CreateTaskSet (requires WRITE permission)
+        - DeleteAccountSetting (requires WRITE permission)
+        - DeleteAttributes (requires WRITE permission)
+        - DeleteCapacityProvider (requires WRITE permission)
+        - DeleteCluster (requires WRITE permission)
+        - DeleteService (requires WRITE permission)
+        - DeleteTaskDefinitions (requires WRITE permission)
+        - DeleteTaskSet (requires WRITE permission)
+        - DeregisterContainerInstance (requires WRITE permission)
+        - DeregisterTaskDefinition (requires WRITE permission)
+        - DescribeCapacityProviders (read-only)
+        - DescribeClusters (read-only)
+        - DescribeContainerInstances (read-only)
+        - DescribeServiceDeployments (read-only)
+        - DescribeServiceRevisions (read-only)
+        - DescribeServices (read-only)
+        - DescribeTaskDefinition (read-only)
+        - DescribeTasks (read-only)
+        - DescribeTaskSets (read-only)
+        - DiscoverPollEndpoint (requires WRITE permission)
+        - ExecuteCommand (requires WRITE permission)
+        - GetTaskProtection (requires WRITE permission)
+        - ListAccountSettings (read-only)
+        - ListAttributes (read-only)
+        - ListClusters (read-only)
+        - ListContainerInstances (read-only)
+        - ListServiceDeployments (read-only)
+        - ListServices (read-only)
+        - ListServicesByNamespace (read-only)
+        - ListTagsForResource (read-only)
+        - ListTaskDefinitionFamilies (read-only)
+        - ListTaskDefinitions (read-only)
+        - ListTasks (read-only)
+        - PutAccountSetting (requires WRITE permission)
+        - PutAccountSettingDefault (requires WRITE permission)
+        - PutAttributes (requires WRITE permission)
+        - PutClusterCapacityProviders (requires WRITE permission)
+        - RegisterContainerInstance (requires WRITE permission)
+        - RegisterTaskDefinition (requires WRITE permission)
+        - RunTask (requires WRITE permission)
+        - StartTask (requires WRITE permission)
+        - StopServiceDeployment (requires WRITE permission)
+        - StopTask (requires WRITE permission)
+        - SubmitAttachmentStateChanges (requires WRITE permission)
+        - SubmitContainerStateChange (requires WRITE permission)
+        - SubmitTaskStateChange (requires WRITE permission)
+        - TagResource (requires WRITE permission)
+        - UntagResource (requires WRITE permission)
+        - UpdateCapacityProvider (requires WRITE permission)
+        - UpdateCluster (requires WRITE permission)
+        - UpdateClusterSettings (requires WRITE permission)
+        - UpdateContainerAgent (requires WRITE permission)
+        - UpdateContainerInstancesState (requires WRITE permission)
+        - UpdateService (requires WRITE permission)
+        - UpdateServicePrimaryTaskSet (requires WRITE permission)
+        - UpdateTaskProtection (requires WRITE permission)
+        - UpdateTaskSet (requires WRITE permission)
         
         Parameters:
             api_operation: The ECS API operation to execute (CamelCase)
