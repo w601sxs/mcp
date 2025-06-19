@@ -20,8 +20,20 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 # Set working directory
 WORKDIR /app
 
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Prefer the system python
+ENV UV_PYTHON_PREFERENCE=only-system
+
+# Run without updating the uv.lock file like running with `--frozen`
+ENV UV_FROZEN=true
+
 # Copy project files
-COPY pyproject.toml uv.lock* ./
+COPY pyproject.toml uv.lock ./
 COPY awslabs/ ./awslabs/
 
 # Install dependencies
