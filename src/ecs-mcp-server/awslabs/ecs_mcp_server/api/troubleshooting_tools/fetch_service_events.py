@@ -76,10 +76,10 @@ def _extract_filtered_events(
     return filtered_events
 
 
-async def _check_target_group_health(elb_client, target_group_arn: str) -> Optional[Dict[str, Any]]:
+def _check_target_group_health(elb_client, target_group_arn: str) -> Optional[Dict[str, Any]]:
     """Check target group health and return any unhealthy targets."""
     try:
-        tg_health = await elb_client.describe_target_health(TargetGroupArn=target_group_arn)
+        tg_health = elb_client.describe_target_health(TargetGroupArn=target_group_arn)
 
         # Find unhealthy targets
         unhealthy_targets = [
@@ -100,12 +100,12 @@ async def _check_target_group_health(elb_client, target_group_arn: str) -> Optio
         return {"type": "health_check_error", "error": str(error)}
 
 
-async def _check_port_mismatch(
+def _check_port_mismatch(
     elb_client, target_group_arn: str, container_port: int
 ) -> Optional[Dict[str, Any]]:
     """Check if container port and target group port match."""
     try:
-        tg = await elb_client.describe_target_groups(TargetGroupArns=[target_group_arn])
+        tg = elb_client.describe_target_groups(TargetGroupArns=[target_group_arn])
         if tg["TargetGroups"] and tg["TargetGroups"][0]["Port"] != container_port:
             return {
                 "type": "port_mismatch",
@@ -133,13 +133,13 @@ async def _analyze_load_balancer_issues(
 
         if "targetGroupArn" in lb:
             # Check target health
-            health_issue = await _check_target_group_health(elb, lb["targetGroupArn"])
+            health_issue = _check_target_group_health(elb, lb["targetGroupArn"])
             if health_issue:
                 lb_issues.append(health_issue)
 
             # Check port mismatch if container port is specified
             if "containerPort" in lb:
-                port_issue = await _check_port_mismatch(
+                port_issue = _check_port_mismatch(
                     elb, lb["targetGroupArn"], lb["containerPort"]
                 )
                 if port_issue:
@@ -203,7 +203,7 @@ async def fetch_service_events(
 
         # Check if service exists
         try:
-            services = await ecs.describe_services(cluster=cluster_name, services=[service_name])
+            services = ecs.describe_services(cluster=cluster_name, services=[service_name])
 
             if not services["services"] or services["services"][0]["status"] == "INACTIVE":
                 response["message"] = (
