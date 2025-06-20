@@ -76,7 +76,7 @@ def _extract_filtered_events(
     return filtered_events
 
 
-def _check_target_group_health(elb_client, target_group_arn: str) -> Optional[Dict[str, Any]]:
+async def _check_target_group_health(elb_client, target_group_arn: str) -> Optional[Dict[str, Any]]:
     """Check target group health and return any unhealthy targets."""
     try:
         tg_health = elb_client.describe_target_health(TargetGroupArn=target_group_arn)
@@ -100,7 +100,7 @@ def _check_target_group_health(elb_client, target_group_arn: str) -> Optional[Di
         return {"type": "health_check_error", "error": str(error)}
 
 
-def _check_port_mismatch(
+async def _check_port_mismatch(
     elb_client, target_group_arn: str, container_port: int
 ) -> Optional[Dict[str, Any]]:
     """Check if container port and target group port match."""
@@ -133,13 +133,13 @@ async def _analyze_load_balancer_issues(
 
         if "targetGroupArn" in lb:
             # Check target health
-            health_issue = _check_target_group_health(elb, lb["targetGroupArn"])
+            health_issue = await _check_target_group_health(elb, lb["targetGroupArn"])
             if health_issue:
                 lb_issues.append(health_issue)
 
             # Check port mismatch if container port is specified
             if "containerPort" in lb:
-                port_issue = _check_port_mismatch(
+                port_issue = await _check_port_mismatch(
                     elb, lb["targetGroupArn"], lb["containerPort"]
                 )
                 if port_issue:
