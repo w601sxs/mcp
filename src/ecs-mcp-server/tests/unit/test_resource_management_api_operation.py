@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from awslabs.ecs_mcp_server.api.resource_management import ecs_api_operation, camel_to_snake
+from awslabs.ecs_mcp_server.api.resource_management import camel_to_snake, ecs_api_operation
 
 
 def test_camel_to_snake():
@@ -24,14 +24,11 @@ async def test_ecs_api_operation_create_service(mock_get_client, mock_get_config
     """Test ecs_api_operation function with CreateService operation."""
     # Mock get_config to return allow-write=True
     mock_get_config.return_value = {"allow-write": True}
-    
+
     # Mock get_aws_client
     mock_ecs = MagicMock()
     mock_ecs.create_service.return_value = {
-        "service": {
-            "serviceName": "my-service",
-            "status": "ACTIVE"
-        }
+        "service": {"serviceName": "my-service", "status": "ACTIVE"}
     }
     mock_get_client.return_value = mock_ecs
 
@@ -46,15 +43,12 @@ async def test_ecs_api_operation_create_service(mock_get_client, mock_get_config
             "awsvpcConfiguration": {
                 "subnets": ["subnet-1", "subnet-2"],
                 "securityGroups": ["sg-1"],
-                "assignPublicIp": "ENABLED"
+                "assignPublicIp": "ENABLED",
             }
-        }
+        },
     }
-    
-    result = await ecs_api_operation(
-        api_operation="CreateService",
-        api_params=api_params
-    )
+
+    result = await ecs_api_operation(api_operation="CreateService", api_params=api_params)
 
     # Verify get_aws_client was called
     mock_get_client.assert_called_once_with("ecs")
@@ -74,22 +68,17 @@ async def test_ecs_api_operation_describe_clusters(mock_get_client):
     # Mock get_aws_client
     mock_ecs = MagicMock()
     mock_ecs.describe_clusters.return_value = {
-        "clusters": [
-            {"clusterName": "test-cluster", "status": "ACTIVE"}
-        ]
+        "clusters": [{"clusterName": "test-cluster", "status": "ACTIVE"}]
     }
     mock_get_client.return_value = mock_ecs
 
     # Call ecs_api_operation with DescribeClusters operation
     api_params = {
         "clusters": ["test-cluster"],
-        "include": ["ATTACHMENTS", "SETTINGS", "STATISTICS", "TAGS"]
+        "include": ["ATTACHMENTS", "SETTINGS", "STATISTICS", "TAGS"],
     }
-    
-    result = await ecs_api_operation(
-        api_operation="DescribeClusters",
-        api_params=api_params
-    )
+
+    result = await ecs_api_operation(api_operation="DescribeClusters", api_params=api_params)
 
     # Verify get_aws_client was called
     mock_get_client.assert_called_once_with("ecs")
@@ -108,22 +97,17 @@ async def test_ecs_api_operation_list_tasks(mock_get_client):
     """Test ecs_api_operation function with ListTasks operation."""
     # Mock get_aws_client
     mock_ecs = MagicMock()
-    mock_ecs.list_tasks.return_value = {
-        "taskArns": ["task-1", "task-2"]
-    }
+    mock_ecs.list_tasks.return_value = {"taskArns": ["task-1", "task-2"]}
     mock_get_client.return_value = mock_ecs
 
     # Call ecs_api_operation with ListTasks operation
     api_params = {
         "cluster": "test-cluster",
         "serviceName": "test-service",
-        "desiredStatus": "RUNNING"
+        "desiredStatus": "RUNNING",
     }
-    
-    result = await ecs_api_operation(
-        api_operation="ListTasks",
-        api_params=api_params
-    )
+
+    result = await ecs_api_operation(api_operation="ListTasks", api_params=api_params)
 
     # Verify get_aws_client was called
     mock_get_client.assert_called_once_with("ecs")
@@ -143,10 +127,7 @@ async def test_ecs_api_operation_unsupported_operation(mock_get_client):
     """Test ecs_api_operation function with an unsupported operation."""
     # Call ecs_api_operation with an unsupported operation
     with pytest.raises(ValueError) as excinfo:
-        await ecs_api_operation(
-            api_operation="UnsupportedOperation",
-            api_params={}
-        )
+        await ecs_api_operation(api_operation="UnsupportedOperation", api_params={})
 
     # Verify the error message
     assert "Unsupported API operation" in str(excinfo.value)
@@ -163,8 +144,7 @@ async def test_ecs_api_operation_error_handling(mock_get_client):
 
     # Call ecs_api_operation with DescribeClusters operation
     result = await ecs_api_operation(
-        api_operation="DescribeClusters",
-        api_params={"clusters": ["test-cluster"]}
+        api_operation="DescribeClusters", api_params={"clusters": ["test-cluster"]}
     )
 
     # Verify get_aws_client was called
@@ -186,20 +166,19 @@ async def test_ecs_api_operation_write_permission_required(mock_get_client, mock
     """Test that write operations require WRITE permission."""
     # Mock get_config to return allow-write=False
     mock_get_config.return_value = {"allow-write": False}
-    
+
     # Mock get_aws_client (should not be called)
     mock_ecs = MagicMock()
     mock_get_client.return_value = mock_ecs
 
     # Call ecs_api_operation with CreateCluster operation (requires WRITE permission)
     result = await ecs_api_operation(
-        api_operation="CreateCluster",
-        api_params={"clusterName": "test-cluster"}
+        api_operation="CreateCluster", api_params={"clusterName": "test-cluster"}
     )
 
     # Verify get_config was called
     mock_get_config.assert_called_once()
-    
+
     # Verify get_aws_client was NOT called (permission check should fail first)
     mock_get_client.assert_not_called()
 
@@ -218,21 +197,18 @@ async def test_ecs_api_operation_read_only_no_permission_required(mock_get_clien
     """Test that read-only operations don't require WRITE permission."""
     # Mock get_config to return allow-write=False
     mock_get_config.return_value = {"allow-write": False}
-    
+
     # Mock get_aws_client
     mock_ecs = MagicMock()
     mock_ecs.list_clusters.return_value = {"clusterArns": ["cluster-1", "cluster-2"]}
     mock_get_client.return_value = mock_ecs
 
     # Call ecs_api_operation with ListClusters operation (read-only)
-    result = await ecs_api_operation(
-        api_operation="ListClusters",
-        api_params={}
-    )
+    result = await ecs_api_operation(api_operation="ListClusters", api_params={})
 
     # Verify get_aws_client was called (permission check should pass)
     mock_get_client.assert_called_once_with("ecs")
-    
+
     # Verify list_clusters was called
     mock_ecs.list_clusters.assert_called_once_with()
 

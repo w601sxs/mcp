@@ -28,26 +28,29 @@ from awslabs.ecs_mcp_server.api.resource_management import ecs_api_operation
 def register_module(mcp: FastMCP) -> None:
     """Register resource management module tools and prompts with the MCP server."""
 
+    api_operation_field = Field(
+        ...,
+        description="The ECS API operation to execute (CamelCase)",
+    )
+    api_params_field = Field(
+        default={},
+        description="Dictionary of parameters to pass to the API operation",
+    )
+
     @mcp.tool(name="ecs_resource_management", annotations=None)
     async def mcp_ecs_resource_management(
-        api_operation: str = Field(
-            ...,
-            description="The ECS API operation to execute (CamelCase)",
-        ),
-        api_params: Dict[str, Any] = Field(
-            ...,
-            description="Dictionary of parameters to pass to the API operation",
-        ),
+        api_operation: str = api_operation_field,
+        api_params: Dict[str, Any] = api_params_field,
     ) -> Dict[str, Any]:
         """
         Execute ECS API operations directly.
-        
+
         This tool allows direct execution of ECS API operations using boto3.
-        
+
         PERMISSIONS:
         - Operations starting with "Describe" or "List" are read-only
         - All other operations require WRITE permission (ALLOW_WRITE=true)
-        
+
         Supported operations:
         - CreateCapacityProvider (requires WRITE permission)
         - CreateCluster (requires WRITE permission)
@@ -109,11 +112,11 @@ def register_module(mcp: FastMCP) -> None:
         - UpdateServicePrimaryTaskSet (requires WRITE permission)
         - UpdateTaskProtection (requires WRITE permission)
         - UpdateTaskSet (requires WRITE permission)
-        
+
         Parameters:
             api_operation: The ECS API operation to execute (CamelCase)
             api_params: Dictionary of parameters to pass to the API operation
-            
+
         Returns:
             Dictionary containing the API response
         """

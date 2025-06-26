@@ -77,19 +77,11 @@ class TestResourceManagementTool(unittest.TestCase):
 
         await mcp_ecs_resource_management(
             "DescribeServices",
-            {
-                "cluster": "my-cluster",
-                "services": ["my-service"],
-                "include": ["TAGS"]
-            }
+            {"cluster": "my-cluster", "services": ["my-service"], "include": ["TAGS"]},
         )
         mock_ecs_api_operation.assert_called_with(
             "DescribeServices",
-            {
-                "cluster": "my-cluster",
-                "services": ["my-service"],
-                "include": ["TAGS"]
-            }
+            {"cluster": "my-cluster", "services": ["my-service"], "include": ["TAGS"]},
         )
 
         # Verify result is passed through

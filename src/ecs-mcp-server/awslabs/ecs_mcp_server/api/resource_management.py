@@ -88,51 +88,51 @@ SUPPORTED_ECS_OPERATIONS = [
     "UpdateService",
     "UpdateServicePrimaryTaskSet",
     "UpdateTaskProtection",
-    "UpdateTaskSet"
+    "UpdateTaskSet",
 ]
 
 
 def camel_to_snake(name):
     """
     Convert CamelCase to snake_case.
-    
+
     Args:
         name: CamelCase string
-        
+
     Returns:
         snake_case string
     """
-    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
+    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
-async def ecs_api_operation(
-    api_operation: str,
-    api_params: Dict[str, Any]
-) -> Dict[str, Any]:
+async def ecs_api_operation(api_operation: str, api_params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Execute an ECS API operation with the provided parameters.
-    
+
     Args:
         api_operation: The boto3 ECS API operation to execute (camelCase)
         api_params: Dictionary of parameters to pass to the API operation
-        
+
     Returns:
         Dictionary containing the API response
-        
+
     Note:
         Operations starting with "Describe" or "List" are read-only.
         All other operations require WRITE permission (ALLOW_WRITE=true).
     """
     # Validate the API operation
     if api_operation not in SUPPORTED_ECS_OPERATIONS:
-        raise ValueError(f"Unsupported API operation: {api_operation}. Must be one of: {', '.join(SUPPORTED_ECS_OPERATIONS)}")
-    
+        supported_ops = ", ".join(SUPPORTED_ECS_OPERATIONS)
+        raise ValueError(
+            f"Unsupported API operation: {api_operation}. Must be one of: {supported_ops}"
+        )
+
     # Check if this is a write operation (not starting with "Describe" or "List")
     if not api_operation.startswith("Describe") and not api_operation.startswith("List"):
         # Import here to avoid circular imports
         from awslabs.ecs_mcp_server.utils.config import get_config
-        
+
         # Check if write operations are allowed
         config = get_config()
         if not config.get("allow-write", False):
@@ -141,21 +141,21 @@ async def ecs_api_operation(
                 "error": (
                     f"Operation {api_operation} requires WRITE permission. "
                     f"Set ALLOW_WRITE=true in your environment to enable write operations."
-                )
+                ),
             }
-    
+
     logger.info(f"Executing ECS API operation: {api_operation} with params: {api_params}")
-    
+
     try:
         # Get the ECS client
         ecs_client = await get_aws_client("ecs")
-        
+
         # Convert api_operation (CamelCase) to the method name (snake_case)
         method_name = camel_to_snake(api_operation)
-        
+
         # Get the method
         method = getattr(ecs_client, method_name)
-        
+
         # Execute the API operation with the provided parameters
         response = method(**api_params)
         return response

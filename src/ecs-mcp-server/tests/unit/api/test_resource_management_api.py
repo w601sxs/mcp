@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from awslabs.ecs_mcp_server.api.resource_management import ecs_api_operation, camel_to_snake
+from awslabs.ecs_mcp_server.api.resource_management import camel_to_snake, ecs_api_operation
 
 
 class TestEcsResourceManagementAPI:
@@ -22,10 +22,7 @@ class TestEcsResourceManagementAPI:
         mock_get_client.return_value = mock_ecs
 
         # Call ecs_api_operation with ListClusters operation
-        result = await ecs_api_operation(
-            api_operation="ListClusters",
-            api_params={}
-        )
+        result = await ecs_api_operation(api_operation="ListClusters", api_params={})
 
         # Verify get_aws_client was called
         mock_get_client.assert_called_once_with("ecs")
@@ -52,8 +49,8 @@ class TestEcsResourceManagementAPI:
             api_operation="DescribeClusters",
             api_params={
                 "clusters": ["test-cluster"],
-                "include": ["ATTACHMENTS", "SETTINGS", "STATISTICS", "TAGS"]
-            }
+                "include": ["ATTACHMENTS", "SETTINGS", "STATISTICS", "TAGS"],
+            },
         )
 
         # Verify get_aws_client was called
@@ -73,15 +70,12 @@ class TestEcsResourceManagementAPI:
         """Test ecs_api_operation function with ListServices operation."""
         # Mock get_aws_client
         mock_ecs = MagicMock()
-        mock_ecs.list_services.return_value = {
-            "serviceArns": ["service-1", "service-2"]
-        }
+        mock_ecs.list_services.return_value = {"serviceArns": ["service-1", "service-2"]}
         mock_get_client.return_value = mock_ecs
 
         # Call ecs_api_operation with ListServices operation
         result = await ecs_api_operation(
-            api_operation="ListServices",
-            api_params={"cluster": "test-cluster"}
+            api_operation="ListServices", api_params={"cluster": "test-cluster"}
         )
 
         # Verify get_aws_client was called
@@ -110,8 +104,8 @@ class TestEcsResourceManagementAPI:
             api_params={
                 "cluster": "test-cluster",
                 "services": ["test-service"],
-                "include": ["TAGS"]
-            }
+                "include": ["TAGS"],
+            },
         )
 
         # Verify get_aws_client was called
@@ -140,8 +134,8 @@ class TestEcsResourceManagementAPI:
             api_params={
                 "cluster": "test-cluster",
                 "serviceName": "test-service",
-                "desiredStatus": "RUNNING"
-            }
+                "desiredStatus": "RUNNING",
+            },
         )
 
         # Verify get_aws_client was called
@@ -176,11 +170,7 @@ class TestEcsResourceManagementAPI:
         # Call ecs_api_operation with DescribeTasks operation
         result = await ecs_api_operation(
             api_operation="DescribeTasks",
-            api_params={
-                "cluster": "test-cluster",
-                "tasks": ["task-1"],
-                "include": ["TAGS"]
-            }
+            api_params={"cluster": "test-cluster", "tasks": ["task-1"], "include": ["TAGS"]},
         )
 
         # Verify get_aws_client was called
@@ -200,16 +190,15 @@ class TestEcsResourceManagementAPI:
         """Test ecs_api_operation function with ListTaskDefinitions operation."""
         # Mock get_aws_client
         mock_ecs = MagicMock()
-        mock_ecs.list_task_definitions.return_value = {"taskDefinitionArns": ["taskdef-1", "taskdef-2"]}
+        mock_ecs.list_task_definitions.return_value = {
+            "taskDefinitionArns": ["taskdef-1", "taskdef-2"]
+        }
         mock_get_client.return_value = mock_ecs
 
         # Call ecs_api_operation with ListTaskDefinitions operation
         result = await ecs_api_operation(
             api_operation="ListTaskDefinitions",
-            api_params={
-                "familyPrefix": "test-family",
-                "status": "ACTIVE"
-            }
+            api_params={"familyPrefix": "test-family", "status": "ACTIVE"},
         )
 
         # Verify get_aws_client was called
@@ -233,15 +222,16 @@ class TestEcsResourceManagementAPI:
             "taskDefinition": {
                 "family": "test-family",
                 "revision": 1,
-                "taskDefinitionArn": "arn:aws:ecs:us-west-2:123456789012:task-definition/test-family:1",
+                "taskDefinitionArn": (
+                    "arn:aws:ecs:us-west-2:123456789012:task-definition/test-family:1"
+                ),
             }
         }
         mock_get_client.return_value = mock_ecs
 
         # Call ecs_api_operation with DescribeTaskDefinition operation
         result = await ecs_api_operation(
-            api_operation="DescribeTaskDefinition",
-            api_params={"taskDefinition": "test-family:1"}
+            api_operation="DescribeTaskDefinition", api_params={"taskDefinition": "test-family:1"}
         )
 
         # Verify get_aws_client was called
@@ -267,8 +257,7 @@ class TestEcsResourceManagementAPI:
 
         # Call ecs_api_operation with ListContainerInstances operation
         result = await ecs_api_operation(
-            api_operation="ListContainerInstances",
-            api_params={"cluster": "test-cluster"}
+            api_operation="ListContainerInstances", api_params={"cluster": "test-cluster"}
         )
 
         # Verify get_aws_client was called
@@ -300,10 +289,7 @@ class TestEcsResourceManagementAPI:
         # Call ecs_api_operation with DescribeContainerInstances operation
         result = await ecs_api_operation(
             api_operation="DescribeContainerInstances",
-            api_params={
-                "cluster": "test-cluster",
-                "containerInstances": ["instance-1"]
-            }
+            api_params={"cluster": "test-cluster", "containerInstances": ["instance-1"]},
         )
 
         # Verify get_aws_client was called
@@ -339,8 +325,7 @@ class TestEcsResourceManagementAPI:
 
         # Call ecs_api_operation with DescribeCapacityProviders operation
         result = await ecs_api_operation(
-            api_operation="DescribeCapacityProviders",
-            api_params={"capacityProviders": ["FARGATE"]}
+            api_operation="DescribeCapacityProviders", api_params={"capacityProviders": ["FARGATE"]}
         )
 
         # Verify get_aws_client was called
@@ -360,14 +345,11 @@ class TestEcsResourceManagementAPI:
         """Test ecs_api_operation function with CreateService operation."""
         # Mock get_config to return allow-write=True
         mock_get_config.return_value = {"allow-write": True}
-        
+
         # Mock get_aws_client
         mock_ecs = MagicMock()
         mock_ecs.create_service.return_value = {
-            "service": {
-                "serviceName": "my-service",
-                "status": "ACTIVE"
-            }
+            "service": {"serviceName": "my-service", "status": "ACTIVE"}
         }
         mock_get_client.return_value = mock_ecs
 
@@ -382,15 +364,12 @@ class TestEcsResourceManagementAPI:
                 "awsvpcConfiguration": {
                     "subnets": ["subnet-1", "subnet-2"],
                     "securityGroups": ["sg-1"],
-                    "assignPublicIp": "ENABLED"
+                    "assignPublicIp": "ENABLED",
                 }
-            }
+            },
         }
-        
-        result = await ecs_api_operation(
-            api_operation="CreateService",
-            api_params=api_params
-        )
+
+        result = await ecs_api_operation(api_operation="CreateService", api_params=api_params)
 
         # Verify get_aws_client was called
         mock_get_client.assert_called_once_with("ecs")
@@ -408,10 +387,7 @@ class TestEcsResourceManagementAPI:
         """Test ecs_api_operation function with an unsupported operation."""
         # Call ecs_api_operation with an unsupported operation
         with pytest.raises(ValueError) as excinfo:
-            await ecs_api_operation(
-                api_operation="UnsupportedOperation",
-                api_params={}
-            )
+            await ecs_api_operation(api_operation="UnsupportedOperation", api_params={})
 
         # Verify the error message
         assert "Unsupported API operation" in str(excinfo.value)
@@ -427,8 +403,7 @@ class TestEcsResourceManagementAPI:
 
         # Call ecs_api_operation with DescribeClusters operation
         result = await ecs_api_operation(
-            api_operation="DescribeClusters",
-            api_params={"clusters": ["test-cluster"]}
+            api_operation="DescribeClusters", api_params={"clusters": ["test-cluster"]}
         )
 
         # Verify get_aws_client was called
