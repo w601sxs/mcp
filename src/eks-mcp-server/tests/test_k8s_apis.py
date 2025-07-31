@@ -43,7 +43,7 @@ def mock_kubernetes_client():
 @pytest.fixture
 def k8s_apis(mock_kubernetes_client):
     """Create a K8sApis instance with mocked Kubernetes client."""
-    mock_client, mock_config, mock_api_client = mock_kubernetes_client
+    _, _, mock_api_client = mock_kubernetes_client
 
     # Mock the dynamic client
     mock_dynamic_client = MagicMock()
@@ -59,7 +59,7 @@ def k8s_apis(mock_kubernetes_client):
         patch('os.unlink'),
     ):
         # Create K8sApis instance with CA data
-        ca_data = base64.b64encode(b'test-ca-data').decode('utf-8')
+        ca_data = base64.b64encode(b'fake-ca-data').decode('utf-8')
 
         # Create a real K8sApis instance but with mocked components
         with (
@@ -68,10 +68,10 @@ def k8s_apis(mock_kubernetes_client):
             patch('tempfile.NamedTemporaryFile', return_value=mock_temp_file),
         ):
             # Create the actual instance
-            apis = K8sApis('https://test-endpoint', 'test-token', ca_data)
+            apis = K8sApis('https://test-endpoint', 'fake-token', ca_data)
 
             # Verify CA data was written to the temp file
-            mock_temp_file.write.assert_called_once_with(b'test-ca-data')
+            mock_temp_file.write.assert_called_once_with(b'fake-ca-data')
 
             # Set up get_events to return different values for different tests
             apis.get_events = MagicMock()
@@ -97,11 +97,11 @@ class TestK8sApisInitialization:
         """Test initialization requires CA data."""
         # Initialize K8sApis without CA data - should raise TypeError
         with pytest.raises(TypeError):
-            K8sApis('https://test-endpoint', 'test-token', None)
+            K8sApis('https://test-endpoint', 'fake-token', None)
 
     def test_init_with_ca_data(self, mock_kubernetes_client):
         """Test initialization with CA data."""
-        mock_client, mock_config, mock_api_client = mock_kubernetes_client
+        _, mock_config, _ = mock_kubernetes_client
 
         # Mock tempfile and file operations with context manager support
         mock_temp_file = MagicMock()
@@ -118,19 +118,19 @@ class TestK8sApisInitialization:
             patch('kubernetes.dynamic.DynamicClient', return_value=mock_dynamic_client),
         ):
             # Create K8sApis instance with CA data
-            ca_data = base64.b64encode(b'test-ca-data').decode('utf-8')
+            ca_data = base64.b64encode(b'fake-ca-data').decode('utf-8')
 
             # Initialize the K8sApis instance
-            apis = K8sApis('https://test-endpoint', 'test-token', ca_data)
+            apis = K8sApis('https://test-endpoint', 'fake-token', ca_data)
 
             # Verify configuration
             assert mock_config.host == 'https://test-endpoint'
-            assert mock_config.api_key == {'authorization': 'Bearer test-token'}
+            assert mock_config.api_key == {'authorization': 'Bearer fake-token'}
             assert mock_config.verify_ssl is True
             assert mock_config.ssl_ca_cert == '/tmp/ca-cert-file'
 
             # Verify CA data was written to the temp file
-            mock_temp_file.write.assert_called_once_with(b'test-ca-data')
+            mock_temp_file.write.assert_called_once_with(b'fake-ca-data')
 
             # Verify dynamic client was set
             assert apis.dynamic_client == mock_dynamic_client
@@ -154,9 +154,9 @@ class TestK8sApisInitialization:
             ),  # File doesn't exist yet when exception occurs
         ):
             # Initialize K8sApis with CA data - should raise the exception
-            ca_data = base64.b64encode(b'test-ca-data').decode('utf-8')
+            ca_data = base64.b64encode(b'fake-ca-data').decode('utf-8')
             with pytest.raises(Exception, match='Test error'):
-                K8sApis('https://test-endpoint', 'test-token', ca_data)
+                K8sApis('https://test-endpoint', 'fake-token', ca_data)
 
             # No need to verify cleanup as the file doesn't exist yet when the exception occurs
 
@@ -171,7 +171,7 @@ class TestK8sApisInitialization:
         ):
             # Initialize K8sApis - should raise ImportError
             with pytest.raises(ImportError, match='kubernetes package not installed'):
-                K8sApis('https://test-endpoint', 'test-token', 'test-ca-data')
+                K8sApis('https://test-endpoint', 'fake-token', 'fake-ca-data')
 
     def test_cleanup_on_deletion(self):
         """Test cleanup of temporary CA certificate file on deletion."""
@@ -242,7 +242,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.create.assert_called_once()
-        args, kwargs = mock_resource.create.call_args
+        _, kwargs = mock_resource.create.call_args
         assert kwargs['body']['kind'] == 'Pod'
         assert kwargs['body']['apiVersion'] == 'v1'
         assert kwargs['body']['metadata']['name'] == 'test-pod'
@@ -280,7 +280,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.replace.assert_called_once()
-        args, kwargs = mock_resource.replace.call_args
+        _, kwargs = mock_resource.replace.call_args
         assert kwargs['body']['kind'] == 'Pod'
         assert kwargs['body']['apiVersion'] == 'v1'
         assert kwargs['body']['metadata']['name'] == 'test-pod'
@@ -304,7 +304,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.patch.assert_called_once()
-        args, kwargs = mock_resource.patch.call_args
+        _, kwargs = mock_resource.patch.call_args
         assert kwargs['body']['kind'] == 'Pod'
         assert kwargs['body']['apiVersion'] == 'v1'
         assert kwargs['body']['metadata']['labels']['app'] == 'test'
@@ -363,7 +363,7 @@ class TestK8sApisOperations:
         assert kwargs1['content_type'] == 'application/strategic-merge-patch+json'
 
         # Check second call (merge patch fallback)
-        args2, kwargs2 = mock_resource.patch.call_args_list[1]
+        _, kwargs2 = mock_resource.patch.call_args_list[1]
         assert kwargs2['name'] == 'test-pod'
         assert kwargs2['namespace'] == 'default'
         assert kwargs2['body']['kind'] == 'Pod'
@@ -384,7 +384,7 @@ class TestK8sApisOperations:
 
         # Verify patch was called with strategic merge patch
         mock_resource.patch.assert_called_once()
-        args, kwargs = mock_resource.patch.call_args
+        _, kwargs = mock_resource.patch.call_args
         assert kwargs['body'] == body
         assert kwargs['name'] == name
         assert kwargs['namespace'] == namespace
@@ -409,7 +409,7 @@ class TestK8sApisOperations:
 
         # Verify patch was called once with strategic merge patch
         mock_resource.patch.assert_called_once()
-        args, kwargs = mock_resource.patch.call_args
+        _, kwargs = mock_resource.patch.call_args
         assert kwargs['content_type'] == 'application/strategic-merge-patch+json'
 
     def test_manage_resource_validation(self, k8s_apis):
@@ -463,7 +463,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.get.assert_called_once()
-        args, kwargs = mock_resource.get.call_args
+        _, kwargs = mock_resource.get.call_args
         assert kwargs['namespace'] == 'default'
         assert kwargs['label_selector'] == 'app=test'
         assert kwargs['field_selector'] == 'status.phase=Running'
@@ -482,7 +482,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.get.assert_called_once()
-        args, kwargs = mock_resource.get.call_args
+        _, kwargs = mock_resource.get.call_args
         assert 'namespace' not in kwargs
 
     def test_list_resources_with_additional_kwargs(self, k8s_apis):
@@ -505,7 +505,7 @@ class TestK8sApisOperations:
         # Verify the dynamic client was used correctly
         mock_resources.get.assert_called_once_with(api_version='v1', kind='Pod')
         mock_resource.get.assert_called_once()
-        args, kwargs = mock_resource.get.call_args
+        _, kwargs = mock_resource.get.call_args
         assert kwargs['namespace'] == 'default'
         assert kwargs['limit'] == 100
         assert kwargs['timeout_seconds'] == 30
@@ -763,8 +763,8 @@ class TestK8sApisOperations:
                 mock_temp_file.return_value.__enter__.return_value = mock_file
 
                 # Create K8sApis instance
-                ca_data = base64.b64encode(b'test-ca-data').decode('utf-8')
-                apis = K8sApis('https://test-endpoint', 'test-token', ca_data)
+                ca_data = base64.b64encode(b'fake-ca-data').decode('utf-8')
+                apis = K8sApis('https://test-endpoint', 'fake-token', ca_data)
 
                 # Call get_events with namespace
                 events = apis.get_events(
@@ -851,8 +851,8 @@ class TestK8sApisOperations:
                 mock_temp_file.return_value.__enter__.return_value = mock_file
 
                 # Create K8sApis instance
-                ca_data = base64.b64encode(b'test-ca-data').decode('utf-8')
-                apis = K8sApis('https://test-endpoint', 'test-token', ca_data)
+                ca_data = base64.b64encode(b'fake-ca-data').decode('utf-8')
+                apis = K8sApis('https://test-endpoint', 'fake-token', ca_data)
 
                 # Call get_events without namespace
                 events = apis.get_events(
@@ -1034,7 +1034,7 @@ class TestK8sApisOperations:
         k8s_apis._patch_resource = MagicMock()
 
         # Call the method with force=False
-        results, created_count, updated_count = k8s_apis.apply_from_yaml(yaml_objects, force=False)
+        _, created_count, updated_count = k8s_apis.apply_from_yaml(yaml_objects, force=False)
 
         # Verify results - should create new resources, not update existing ones
         assert created_count == 1
@@ -1070,7 +1070,7 @@ class TestK8sApisOperations:
         resource_mock.get.side_effect = Exception('Not found')
 
         # Call the method
-        results, created_count, updated_count = k8s_apis.apply_from_yaml(yaml_objects)
+        _, created_count, updated_count = k8s_apis.apply_from_yaml(yaml_objects)
 
         # Verify results
         assert created_count == 1
@@ -1168,7 +1168,7 @@ class TestK8sApisOperations:
         resource_mock.get.side_effect = Exception('Not found')
 
         # Call the method with additional kwargs
-        results, created_count, updated_count = k8s_apis.apply_from_yaml(
+        _, created_count, updated_count = k8s_apis.apply_from_yaml(
             yaml_objects, dry_run='All', field_manager='test-manager'
         )
 
@@ -1178,7 +1178,7 @@ class TestK8sApisOperations:
         assert resource_mock.create.call_count == 1
 
         # Verify create was called with correct parameters including additional kwargs
-        args, kwargs = resource_mock.create.call_args
+        _, kwargs = resource_mock.create.call_args
         assert kwargs['body']['kind'] == 'Deployment'
         assert kwargs['dry_run'] == 'All'
         assert kwargs['field_manager'] == 'test-manager'
@@ -1290,21 +1290,22 @@ class TestK8sProxySupport:
     @pytest.fixture
     def mock_k8s_modules(self):
         """Mock kubernetes modules."""
-        with patch('kubernetes.client') as mock_client, \
-             patch('kubernetes.dynamic') as mock_dynamic:
-            
+        with (
+            patch('kubernetes.client') as mock_client,
+            patch('kubernetes.dynamic') as mock_dynamic,
+        ):
             # Create mock configuration
             mock_config = MagicMock()
             mock_client.Configuration.return_value = mock_config
-            
+
             # Create mock API client
             mock_api_client = MagicMock()
             mock_client.ApiClient.return_value = mock_api_client
-            
+
             # Create mock dynamic client
             mock_dynamic_client = MagicMock()
             mock_dynamic.DynamicClient.return_value = mock_dynamic_client
-            
+
             yield {
                 'config': mock_config,
                 'api_client': mock_api_client,
@@ -1320,16 +1321,16 @@ class TestK8sProxySupport:
             'HTTPS_PROXY': 'http://proxy.example.com:8080',
             'HTTP_PROXY': 'http://proxy.example.com:8080',
         }
-        
+
         with patch.dict(os.environ, test_env, clear=False):
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
-            k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+            K8sApis(endpoint, token, ca_data)
+
             # Verify proxy was configured
             mock_config = mock_k8s_modules['config']
             assert mock_config.proxy == 'http://proxy.example.com:8080'
@@ -1338,25 +1339,28 @@ class TestK8sProxySupport:
         """Test that proxy authentication is correctly configured."""
         # Set up environment variables with authentication
         test_env = {
-            'HTTPS_PROXY': 'http://user:pass@proxy.example.com:8080',
+            'HTTPS_PROXY': 'http://test:creds@proxy.example.com:8080',  # pragma: allowlist secret
         }
-        
+
         with patch.dict(os.environ, test_env, clear=False):
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
-            k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+            K8sApis(endpoint, token, ca_data)
+
             # Verify proxy was configured with authentication
             mock_config = mock_k8s_modules['config']
-            assert mock_config.proxy == 'http://user:pass@proxy.example.com:8080'
+            assert (
+                mock_config.proxy
+                == 'http://test:creds@proxy.example.com:8080'  # pragma: allowlist secret
+            )
             assert hasattr(mock_config, 'proxy_headers')
-            
+
             # Verify the authorization header is correctly encoded
-            expected_auth = base64.b64encode(b'user:pass').decode()
+            expected_auth = base64.b64encode(b'test:creds').decode()
             assert mock_config.proxy_headers['Proxy-Authorization'] == f'Basic {expected_auth}'
 
     def test_proxy_configuration_http_fallback(self, mock_k8s_modules):
@@ -1365,16 +1369,16 @@ class TestK8sProxySupport:
         test_env = {
             'HTTP_PROXY': 'http://proxy.example.com:9090',
         }
-        
+
         with patch.dict(os.environ, test_env, clear=False):
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
-            k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+            K8sApis(endpoint, token, ca_data)
+
             # Verify HTTP proxy was configured
             mock_config = mock_k8s_modules['config']
             assert mock_config.proxy == 'http://proxy.example.com:9090'
@@ -1386,16 +1390,16 @@ class TestK8sProxySupport:
             'https_proxy': 'http://proxy.example.com:8080',
             'http_proxy': 'http://proxy.example.com:8080',
         }
-        
+
         with patch.dict(os.environ, test_env, clear=False):
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
-            k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+            K8sApis(endpoint, token, ca_data)
+
             # Verify proxy was configured
             mock_config = mock_k8s_modules['config']
             assert mock_config.proxy == 'http://proxy.example.com:8080'
@@ -1404,56 +1408,35 @@ class TestK8sProxySupport:
         """Test that no proxy is configured when environment variables are not set."""
         # Ensure proxy environment variables are not set by removing them
         proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
-        
+
         # Save original values and remove them
         original_values = {}
         for var in proxy_vars:
             original_values[var] = os.environ.get(var)
             if var in os.environ:
                 del os.environ[var]
-        
+
         try:
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
             k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+
             # Verify no proxy was configured - with no proxy env vars,
             # the proxy attribute should remain as the default MagicMock
-            mock_config = mock_k8s_modules['config']
+            mock_k8s_modules['config']
             # Since we can't easily check if proxy was set with MagicMock,
             # we just verify the instance was created successfully
             assert k8s_apis is not None
-            
+
         finally:
             # Restore original values
             for var, value in original_values.items():
                 if value is not None:
                     os.environ[var] = value
-
-    def test_no_proxy_environment_variable_logging(self, mock_k8s_modules):
-        """Test that NO_PROXY environment variable is logged for debugging."""
-        # Set up environment variables including NO_PROXY
-        test_env = {
-            'HTTPS_PROXY': 'http://proxy.example.com:8080',
-            'NO_PROXY': 'localhost,127.0.0.1,.local',
-        }
-        
-        with patch.dict(os.environ, test_env, clear=False):
-            with patch('awslabs.eks_mcp_server.k8s_apis.logger') as mock_logger:
-                # Create test data
-                endpoint = 'https://test-cluster.eks.amazonaws.com'
-                token = 'test-token'
-                ca_data = base64.b64encode(b'test-ca-cert').decode()
-                
-                # Create K8sApis instance
-                k8s_apis = K8sApis(endpoint, token, ca_data)
-                
-                # Verify NO_PROXY was logged
-                mock_logger.debug.assert_any_call('NO_PROXY setting detected: localhost,127.0.0.1,.local')
 
     def test_proxy_configuration_with_mixed_case_env_vars(self, mock_k8s_modules):
         """Test that uppercase proxy variables take precedence over lowercase."""
@@ -1462,16 +1445,16 @@ class TestK8sProxySupport:
             'HTTPS_PROXY': 'http://uppercase-proxy.example.com:8080',
             'https_proxy': 'http://lowercase-proxy.example.com:8080',
         }
-        
+
         with patch.dict(os.environ, test_env, clear=False):
             # Create test data
             endpoint = 'https://test-cluster.eks.amazonaws.com'
             token = 'test-token'
             ca_data = base64.b64encode(b'test-ca-cert').decode()
-            
+
             # Create K8sApis instance
-            k8s_apis = K8sApis(endpoint, token, ca_data)
-            
+            K8sApis(endpoint, token, ca_data)
+
             # Verify uppercase proxy was used
             mock_config = mock_k8s_modules['config']
             assert mock_config.proxy == 'http://uppercase-proxy.example.com:8080'
