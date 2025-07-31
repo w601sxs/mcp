@@ -17,6 +17,7 @@
 import base64
 import os
 import tempfile
+import urllib.parse
 from awslabs.eks_mcp_server import __version__
 from awslabs.eks_mcp_server.models import Operation
 from loguru import logger
@@ -73,6 +74,9 @@ class K8sApis:
                     os.unlink(self._ca_cert_file_path)
                 raise e
 
+            # Configure HTTP proxy settings if environment variables are present
+            self._configure_proxy_settings(configuration)
+
             # Create base API client
             self.api_client = client.ApiClient(configuration)
 
@@ -85,6 +89,39 @@ class K8sApis:
         except ImportError:
             logger.error('kubernetes package not installed')
             raise
+
+    def _configure_proxy_settings(self, config):
+        """Configure proxy settings for Kubernetes client from environment variables."""
+        # Get proxy URL (HTTPS proxy takes precedence over HTTP proxy)
+        proxy_url = (os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy') or 
+                    os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy'))
+        
+        # Log NO_PROXY setting if present
+        no_proxy = os.environ.get('NO_PROXY') or os.environ.get('no_proxy')
+        if no_proxy:
+            logger.debug(f'NO_PROXY setting detected: {no_proxy}')
+        
+        if not proxy_url:
+            return
+        
+        logger.debug(f'Configuring proxy: {proxy_url}')
+        
+        # Ensure proxy URL has a scheme - default to http:// if missing
+        if not proxy_url.startswith(('http://', 'https://')):
+            proxy_url = f'http://{proxy_url}'
+            logger.debug(f'Added http:// scheme to proxy URL: {proxy_url}')
+        
+        # Set proxy URL (full URL with scheme)
+        config.proxy = proxy_url
+        
+        # Parse proxy URL for authentication if present
+        parsed = urllib.parse.urlparse(proxy_url)
+        if parsed.username and parsed.password:
+            credentials = base64.b64encode(f'{parsed.username}:{parsed.password}'.encode()).decode()
+            config.proxy_headers = {'Proxy-Authorization': f'Basic {credentials}'}
+            logger.debug('Proxy authentication configured')
+        
+        logger.debug(f'Proxy configured: {config.proxy}')
 
     def _patch_resource(
         self,

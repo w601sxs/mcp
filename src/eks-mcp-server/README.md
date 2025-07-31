@@ -654,7 +654,3 @@ In accordance with security best practices, we recommend the following:
 * **Log Level**: Increase the log level to DEBUG for more detailed logs.
 
 For general EKS issues, consult the [Amazon EKS documentation](https://docs.aws.amazon.com/eks/).
-
-## Version
-
-Current MCP server version: 0.1.0
