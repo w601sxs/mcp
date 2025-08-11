@@ -23,11 +23,11 @@ coverage.xml
 .pytest_cache/
 .ruff_cache/
 
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
+# Root virtual environments (but not server/venv)
+/.venv/
+/venv/
+/env/
+/ENV/
 
 # Development files
 *.log
@@ -41,6 +41,8 @@ Dockerfile
 docker-healthcheck.sh
 CHANGELOG.md
 uv.lock
+uv-requirements.txt
+pyproject.toml
 
 # IDE files
 .vscode/
@@ -52,3 +54,9 @@ uv.lock
 
 # Documentation
 docs/
+README.md
+LICENSE
+NOTICE
+
+# Source files (already included in server/)
+/awslabs/
