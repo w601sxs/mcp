@@ -11,10 +11,9 @@
     "type": "python",
     "entry_point": "awslabs.redshift_mcp_server.server:main",
     "mcp_config": {
-      "command": "${__dirname}/server/venv/bin/python",
-      "args": ["-m", "awslabs.redshift_mcp_server.server"],
+      "command": "uvx",
+      "args": ["--from", "awslabs.redshift-mcp-server@file://${__dirname}", "awslabs.redshift-mcp-server"],
       "env": {
-        "PYTHONPATH": "${__dirname}/server:${__dirname}/server/venv/lib/python3.12/site-packages",
         "AWS_PROFILE": "${AWS_PROFILE:-default}",
         "AWS_REGION": "${AWS_REGION:-us-east-1}",
         "FASTMCP_LOG_LEVEL": "${FASTMCP_LOG_LEVEL:-INFO}"
