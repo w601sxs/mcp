@@ -1,0 +1,59 @@
+{
+  "dxt_version": "0.1",
+  "name": "redshift-mcp-server",
+  "version": "0.0.3",
+  "description": "Amazon Redshift MCP Server - Discover, explore, and query Amazon Redshift clusters and serverless workgroups",
+  "author": {
+    "name": "Amazon Web Services, Inc.",
+    "email": "203918161+awslabs-mcp@users.noreply.github.com"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "awslabs.redshift_mcp_server.server:main",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "awslabs.redshift_mcp_server.server"],
+      "env": {
+        "AWS_PROFILE": "${AWS_PROFILE:-default}",
+        "AWS_REGION": "${AWS_REGION:-us-east-1}",
+        "FASTMCP_LOG_LEVEL": "${FASTMCP_LOG_LEVEL:-INFO}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "redshift_discover_clusters",
+      "description": "Discover available Redshift clusters and serverless workgroups"
+    },
+    {
+      "name": "redshift_list_databases",
+      "description": "List databases in a Redshift cluster or workgroup"
+    },
+    {
+      "name": "redshift_list_schemas",
+      "description": "List schemas in a Redshift database"
+    },
+    {
+      "name": "redshift_list_tables",
+      "description": "List tables in a Redshift schema"
+    },
+    {
+      "name": "redshift_describe_table",
+      "description": "Get detailed information about a Redshift table"
+    },
+    {
+      "name": "redshift_execute_query",
+      "description": "Execute SQL queries on Redshift (READ ONLY mode)"
+    },
+    {
+      "name": "redshift_get_query_history",
+      "description": "Get query execution history"
+    }
+  ],
+  "homepage": "https://awslabs.github.io/mcp/servers/redshift-mcp-server/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awslabs/mcp"
+  },
+  "license": "Apache-2.0"
+}
