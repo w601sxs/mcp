@@ -4,7 +4,6 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-*.so
 *.egg
 *.egg-info/
 dist/
@@ -28,7 +27,6 @@ coverage.xml
 venv/
 env/
 ENV/
-server/
 
 # Development files
 *.log
@@ -54,3 +52,10 @@ uv-requirements.txt
 
 # Documentation
 docs/
+
+# Source files at root (already in server/)
+/awslabs/
+/pyproject.toml
+/README.md
+/LICENSE
+/NOTICE
