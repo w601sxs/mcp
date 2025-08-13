@@ -13,17 +13,19 @@
     "url": "https://github.com/awslabs/mcp"
   },
   "server": {
-    "entry_point": "server/venv/bin/awslabs.redshift-mcp-server",
+    "entry_point": "",
     "mcp_config": {
       "args": [
-        "${__dirname}/server/venv/bin/awslabs.redshift-mcp-server"
+        "awslabs.redshift-mcp-server@latest"
       ],
-      "command": "${__dirname}/server/venv/bin/python",
+      "command": "uvx",
       "env": {
-        "AWS_PROFILE": "${AWS_PROFILE:-default}",
-        "AWS_REGION": "${AWS_REGION:-us-east-1}",
-        "FASTMCP_LOG_LEVEL": "${FASTMCP_LOG_LEVEL:-INFO}",
-        "PYTHONPATH": "${__dirname}/server/venv/lib/python3.10/site-packages"
+        "AWS_PROFILE": "${user_config.AWS_PROFILE}",
+        "AWS_DEFAULT_REGION": "${user_config.AWS_DEFAULT_REGION}",
+        "AWS_REGION": "${user_config.AWS_REGION}",
+        "AWS_SHARED_CREDENTIALS_FILE": "${user_config.AWS_SHARED_CREDENTIALS_FILE}",
+        "AWS_CONFIG_FILE": "${user_config.AWS_CONFIG_FILE}",
+        "FASTMCP_LOG_LEVEL": "${user_config.FASTMCP_LOG_LEVEL}"
       }
     },
     "type": "python"
@@ -58,5 +60,55 @@
       "name": "redshift_get_query_history"
     }
   ],
+  "user_config": {
+    "AWS_DEFAULT_REGION": {
+      "type": "string",
+      "title": "AWS_DEFAULT_REGION",
+      "description": "The default AWS region",
+      "required": false,
+      "sensitive": false,
+      "default": "us-east-1"
+    },
+    "AWS_REGION": {
+      "type": "string",
+      "title": "AWS_REGION",
+      "description": "The AWS region",
+      "required": false,
+      "sensitive": false,
+      "default": "us-east-1"
+    },
+    "AWS_PROFILE": {
+      "type": "string",
+      "title": "AWS_PROFILE",
+      "description": "The AWS profile",
+      "required": false,
+      "sensitive": false,
+      "default": "default"
+    },
+    "AWS_SHARED_CREDENTIALS_FILE": {
+      "type": "string",
+      "title": "AWS_SHARED_CREDENTIALS_FILE",
+      "description": "The AWS shared credentials file location",
+      "required": false,
+      "sensitive": false,
+      "default": "$HOME/.aws/credentials"
+    },
+    "AWS_CONFIG_FILE": {
+      "type": "string",
+      "title": "AWS_CONFIG_FILE",
+      "description": "The AWS configuration file location",
+      "required": false,
+      "sensitive": false,
+      "default": "$HOME/.aws/config"
+    },
+    "FASTMCP_LOG_LEVEL": {
+      "type": "string",
+      "title": "FASTMCP_LOG_LEVEL",
+      "description": "The FastMCP log level",
+      "required": false,
+      "sensitive": false,
+      "default": "ERROR"
+    }
+  },
   "version": "0.0.3"
 }

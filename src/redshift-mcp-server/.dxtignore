@@ -56,6 +56,6 @@ docs/
 # Source files at root (already in server/)
 /awslabs/
 /pyproject.toml
-/README.md
-/LICENSE
-/NOTICE
+
+.python-version
+manifest-*.json
