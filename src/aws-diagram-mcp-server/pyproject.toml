@@ -145,7 +145,7 @@ markers = [
 filterwarnings = [
     "ignore::DeprecationWarning:ast",
     "ignore:ast.Str is deprecated:DeprecationWarning",
-    "ignore:ast.Num is deprecated:DeprecationWarning", 
+    "ignore:ast.Num is deprecated:DeprecationWarning",
     "ignore:ast.NameConstant is deprecated:DeprecationWarning",
     "ignore:ast.Ellipsis is deprecated:DeprecationWarning",
     "ignore:Attribute s is deprecated:DeprecationWarning",
