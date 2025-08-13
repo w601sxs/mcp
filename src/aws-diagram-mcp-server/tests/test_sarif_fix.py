@@ -1,0 +1,137 @@
+"""Test for SARIF-OM module fix (GitHub issue #1041)."""
+
+import pytest
+import importlib
+
+
+class TestSarifFix:
+    """Test cases for the SARIF-OM module fix."""
+
+    def test_sarif_om_available(self):
+        """Test that sarif-om is available after fix."""
+        try:
+            import sarif_om
+            assert sarif_om is not None
+        except ImportError:
+            pytest.fail("sarif-om module should be available after fix")
+
+    def test_bandit_imports_without_error(self):
+        """Test that Bandit imports without SARIF-related errors."""
+        try:
+            from bandit.core import config, manager
+            
+            # Create basic configuration
+            b_conf = config.BanditConfig()
+            assert b_conf is not None
+            
+            # Create manager
+            mgr = manager.BanditManager(b_conf, 'file', debug=False, verbose=False, quiet=True)
+            assert mgr is not None
+            
+        except Exception as e:
+            pytest.fail(f"Bandit should import and initialize without errors: {e}")
+
+    def test_scanner_functionality(self):
+        """Test that the scanner module works correctly."""
+        from awslabs.aws_diagram_mcp_server.scanner import scan_python_code
+        import asyncio
+        
+        # Test with simple safe code
+        safe_code = '''
+def hello_world():
+    return "Hello, World!"
+'''
+        
+        async def run_test():
+            result = await scan_python_code(safe_code)
+            assert result is not None
+            assert result.syntax_valid is True
+            assert result.has_errors is False
+            return result
+        
+        # Run the async test
+        result = asyncio.run(run_test())
+        assert result.metrics is not None
+        assert result.metrics.total_lines > 0
+
+    def test_bandit_security_scan(self):
+        """Test that Bandit security scanning works with potentially unsafe code."""
+        from awslabs.aws_diagram_mcp_server.scanner import scan_python_code
+        import asyncio
+        
+        # Test with code that should trigger security warnings
+        unsafe_code = '''
+import subprocess
+subprocess.call("echo test", shell=True)
+'''
+        
+        async def run_test():
+            result = await scan_python_code(unsafe_code)
+            assert result is not None
+            assert result.syntax_valid is True
+            # Should have security issues due to subprocess.call with shell=True
+            assert result.has_errors is True
+            assert len(result.security_issues) > 0
+            return result
+        
+        # Run the async test
+        result = asyncio.run(run_test())
+        
+        # Verify we found the expected security issue
+        found_subprocess_issue = any(
+            'subprocess' in issue.issue_text.lower() or 'shell' in issue.issue_text.lower()
+            for issue in result.security_issues
+        )
+        assert found_subprocess_issue, "Should detect subprocess security issue"
+
+    def test_diagram_generation_unaffected(self):
+        """Test that diagram generation still works normally after the fix."""
+        from awslabs.aws_diagram_mcp_server.diagrams_tools import generate_diagram
+        import asyncio
+        import tempfile
+        import os
+        
+        # Simple diagram code
+        diagram_code = '''
+with Diagram("Test Diagram", show=False):
+    from diagrams.aws.compute import EC2
+    from diagrams.aws.database import RDS
+    
+    web = EC2("Web Server")
+    db = RDS("Database")
+    
+    web >> db
+'''
+        
+        async def run_test():
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result = await generate_diagram(
+                    code=diagram_code,
+                    filename="test_diagram",
+                    workspace_dir=temp_dir
+                )
+                # Check if file exists while temp_dir is still valid
+                file_exists = os.path.exists(result.path) if result.path else False
+                return result, file_exists
+        
+        # Run the async test
+        result, file_exists = asyncio.run(run_test())
+        
+        # Verify the diagram was generated successfully
+        assert result.status == 'success'
+        assert result.path is not None
+        assert file_exists, f"Diagram file should exist at {result.path}"
+        assert result.path.endswith('.png')
+
+    def test_sarif_om_version(self):
+        """Test that sarif-om has a reasonable version."""
+        import sarif_om
+        
+        # Check if version is available
+        version = getattr(sarif_om, '__version__', None)
+        if version:
+            # Basic version format check (should be something like "1.0.0")
+            assert isinstance(version, str)
+            assert len(version) > 0
+            # Should contain at least one dot for major.minor format
+            assert '.' in version
