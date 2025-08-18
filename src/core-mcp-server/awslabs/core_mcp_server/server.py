@@ -153,7 +153,7 @@ mcp = FastMCP(
 
 
 @mcp.tool(name='prompt_understanding')
-async def get_prompt_understanding() -> str:
+def get_prompt_understanding() -> str:
     """MCP-CORE Prompt Understanding.
 
     ALWAYS Use this tool first to understand the user's query and translate it into AWS expert advice.
