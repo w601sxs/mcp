@@ -156,447 +156,591 @@ class TestSetup:
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_aws_knowledge_foundation(self, mock_import_server, mock_as_proxy):
+    async def test_setup_aws_knowledge_foundation(self):
         """Test setup function with aws-knowledge-foundation role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.logger'),
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'dev-tools': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_dev_tools(self, mock_import_server, mock_as_proxy):
+    async def test_setup_dev_tools(self):
         """Test setup function with dev-tools role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'ci-cd-devops': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_ci_cd_devops(self, mock_import_server, mock_as_proxy):
+    async def test_setup_ci_cd_devops(self):
         """Test setup function with ci-cd-devops role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'container-orchestration': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_container_orchestration(self, mock_import_server, mock_as_proxy):
+    async def test_setup_container_orchestration(self):
         """Test setup function with container-orchestration role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'serverless-architecture': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_serverless_architecture(self, mock_import_server, mock_as_proxy):
+    async def test_setup_serverless_architecture(self):
         """Test setup function with serverless-architecture role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'analytics-warehouse': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_analytics_warehouse(self, mock_import_server, mock_as_proxy):
+    async def test_setup_analytics_warehouse(self):
         """Test setup function with analytics-warehouse role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'data-platform-eng': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_data_platform_eng(self, mock_import_server, mock_as_proxy):
+    async def test_setup_data_platform_eng(self):
         """Test setup function with data-platform-eng role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'data-ingestion': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_data_ingestion(self, mock_import_server, mock_as_proxy):
+    async def test_setup_data_ingestion(self):
         """Test setup function with data-ingestion role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'ai-dev': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_ai_dev(self, mock_import_server, mock_as_proxy):
+    async def test_setup_ai_dev(self):
         """Test setup function with ai-dev role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'frontend-dev': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_frontend_dev(self, mock_import_server, mock_as_proxy):
+    async def test_setup_frontend_dev(self):
         """Test setup function with frontend-dev role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'api-management': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_api_management(self, mock_import_server, mock_as_proxy):
+    async def test_setup_api_management(self):
         """Test setup function with api-management role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'solutions-architect': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_solutions_architect(self, mock_import_server, mock_as_proxy):
+    async def test_setup_solutions_architect(self):
         """Test setup function with solutions-architect role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.logger'),
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'finops': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_finops(self, mock_import_server, mock_as_proxy):
+    async def test_setup_finops(self):
         """Test setup function with finops role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'monitoring-observability': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_monitoring_observability(self, mock_import_server, mock_as_proxy):
+    async def test_setup_monitoring_observability(self):
         """Test setup function with monitoring-observability role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'caching-performance': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_caching_performance(self, mock_import_server, mock_as_proxy):
+    async def test_setup_caching_performance(self):
         """Test setup function with caching-performance role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'security-identity': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_security_identity(self, mock_import_server, mock_as_proxy):
+    async def test_setup_security_identity(self):
         """Test setup function with security-identity role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'sql-db-specialist': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_sql_db_specialist(self, mock_import_server, mock_as_proxy):
+    async def test_setup_sql_db_specialist(self):
         """Test setup function with sql-db-specialist role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'nosql-db-specialist': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_nosql_db_specialist(self, mock_import_server, mock_as_proxy):
+    async def test_setup_nosql_db_specialist(self):
         """Test setup function with nosql-db-specialist role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'timeseries-db-specialist': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_timeseries_db_specialist(self, mock_import_server, mock_as_proxy):
+    async def test_setup_timeseries_db_specialist(self):
         """Test setup function with timeseries-db-specialist role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'messaging-events': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_messaging_events(self, mock_import_server, mock_as_proxy):
+    async def test_setup_messaging_events(self):
         """Test setup function with messaging-events role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'geospatial-services': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_geospatial_services(self, mock_import_server, mock_as_proxy):
+    async def test_setup_geospatial_services(self):
         """Test setup function with geospatial-services role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'healthcare-lifesci': 'true'})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_healthcare_lifesci(self, mock_import_server, mock_as_proxy):
+    async def test_setup_healthcare_lifesci(self):
         """Test setup function with healthcare-lifesci role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {})
-    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
-    @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_no_roles(self, mock_import_server, mock_as_proxy):
+    async def test_setup_no_roles(self):
         """Test setup function with no roles enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
 
-        # Configure mocks
-        mock_proxy = MagicMock()
-        mock_as_proxy.return_value = mock_proxy
-        mock_import_server.return_value = None
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.return_value = None
 
-        # Call the setup function
-        await setup()
-        assert mock_as_proxy.call_count >= 0
+                # Call the setup function
+                await setup()
+
+                # Verify that as_proxy was not called (no roles enabled)
+                assert mock_as_proxy.call_count == 0
+
+                # Verify that import_server was not called (no roles enabled)
+                assert mock_import_server.call_count == 0
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
+    async def test_setup_import_error(self):
+        """Test setup function when import_server raises an exception."""
+        # Import the setup function
+        with patch.dict('sys.modules', mock_modules):
+            from awslabs.core_mcp_server.server import setup
+
+            # Mock the necessary components
+            with (
+                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
+                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
+            ):
+                # Configure mocks
+                mock_proxy = MagicMock()
+                mock_as_proxy.return_value = mock_proxy
+                mock_import_server.side_effect = Exception('Import error')
+
+                # Call the setup function - should not raise an exception
+                await setup()
+
+                # Verify that the function completed without errors
+                assert True
+
+    @pytest.mark.asyncio
+    @patch.dict('os.environ', {'aws-knowledge-foundation': 'true', 'dev-tools': 'true'})
     @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
     @patch('awslabs.core_mcp_server.server.mcp.import_server')
-    async def test_setup_import_error(self, mock_import_server, mock_as_proxy):
-        """Test setup function when import_server raises an exception."""
+    async def test_setup_multiple_roles(self, mock_import_server, mock_as_proxy):
+        """Test setup function with multiple roles enabled simultaneously."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
@@ -604,8 +748,49 @@ class TestSetup:
         # Configure mocks
         mock_proxy = MagicMock()
         mock_as_proxy.return_value = mock_proxy
-        mock_import_server.side_effect = Exception('Import error')
+        mock_import_server.return_value = None
+
+        # Call the setup function
+        await setup()
+
+        # Verify that as_proxy was called for each server
+        assert mock_as_proxy.call_count > 0
+
+        # Verify that import_server was called for each server
+        assert mock_import_server.call_count > 0
+
+    @pytest.mark.asyncio
+    @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
+    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy')
+    @patch('awslabs.core_mcp_server.server.logger')
+    async def test_setup_logging(self, mock_logger, mock_as_proxy):
+        """Test that setup function logs appropriate messages."""
+        # Import the setup function
+        with patch.dict('sys.modules', mock_modules):
+            from awslabs.core_mcp_server.server import setup
+
+        # Configure mocks
+        mock_proxy = MagicMock()
+        mock_as_proxy.return_value = mock_proxy
+
+        # Call the setup function
+        await setup()
+
+        # Verify that logger.info was called
+        mock_logger.info.assert_called()
+
+    @pytest.mark.asyncio
+    @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
+    @patch('awslabs.core_mcp_server.server.FastMCP.as_proxy', side_effect=Exception('Proxy error'))
+    @patch('awslabs.core_mcp_server.server.logger')
+    async def test_setup_proxy_error(self, mock_logger, mock_as_proxy):
+        """Test setup function when as_proxy raises an exception."""
+        # Import the setup function
+        with patch.dict('sys.modules', mock_modules):
+            from awslabs.core_mcp_server.server import setup
 
         # Call the setup function - should not raise an exception
         await setup()
-        assert mock_as_proxy.call_count >= 0
+
+        # Verify that logger.error was called
+        mock_logger.error.assert_called()
