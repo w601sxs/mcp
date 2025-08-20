@@ -13,73 +13,148 @@
 # limitations under the License.
 """Configuration for pytest."""
 
+import inspect
 import pytest
 import sys
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
+
+
+# --- Create a minimal FastMCP implementation for testing ---
+class MockFunctionTool:
+    """Mock implementation of the FunctionTool class for testing purposes."""
+
+    def __init__(self, func):
+        """Initialize the MockFunctionTool with a function."""
+        self.func = func
+
+    async def run(self, arguments=None):
+        """Execute the function with the provided arguments."""
+        if arguments is None:
+            arguments = {}
+        if callable(self.func):
+            if inspect.iscoroutinefunction(self.func):
+                return await self.func(**arguments)
+            else:
+                return self.func(**arguments)
+        else:
+            return self.func
+
+
+class MockFastMCP:
+    """Mock implementation of the FastMCP class for testing purposes."""
+
+    def __init__(self, description=None, dependencies=None):
+        """Initialize the MockFastMCP with a description and dependencies."""
+        self.description = description
+        self.dependencies = dependencies or []
+        self.tools = {}
+        self.imported_servers = {}
+
+    def tool(self, name=None):
+        """Decorator to register a tool function."""
+
+        def decorator(func):
+            tool_name = name or func.__name__
+            tool_instance = MockFunctionTool(func)
+            self.tools[tool_name] = tool_instance
+            return tool_instance
+
+        return decorator
+
+    def run(self):
+        """Run the MCP server."""
+        pass
+
+    async def import_server(self, proxy, prefix=None):
+        """Import a server with the given prefix."""
+        if prefix:
+            self.imported_servers[prefix] = proxy
+        return True
+
+    @staticmethod
+    def as_proxy(client):
+        """Create a proxy for the given client."""
+        return client
 
 
 # --- Global mocks for MCP servers ---
+# Create a more realistic mock for MCP servers
+def create_mock_server():
+    """Create a mock server with a mcp attribute."""
+    mock_server = MagicMock()
+    mock_server.mcp = MagicMock()
+    return mock_server
+
+
+# Only mock the MCP server modules, not the core FastMCP functionality
 mock_modules = {
-    # FastMCP core
-    'fastmcp': MagicMock(),
-    'fastmcp.settings': MagicMock(),
-    'fastmcp.server': MagicMock(),
-    'fastmcp.server.proxy': MagicMock(),
-    # MCP servers (mocked so imports don’t fail)
+    # MCP servers (mocked so imports don't fail)
     'awslabs.amazon_keyspaces_mcp_server': MagicMock(),
-    'awslabs.amazon_keyspaces_mcp_server.server': MagicMock(),
+    'awslabs.amazon_keyspaces_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.amazon_mq_mcp_server': MagicMock(),
-    'awslabs.amazon_mq_mcp_server.server': MagicMock(),
-    'awslabs.amazon_neptune_mcp_server.server': MagicMock(),
-    'awslabs.amazon_qbusiness_anonymous_mcp_server.server': MagicMock(),
-    'awslabs.amazon_rekognition_mcp_server.server': MagicMock(),
-    'awslabs.amazon_sns_sqs_mcp_server.server': MagicMock(),
-    'awslabs.aurora_dsql_mcp_server.server': MagicMock(),
-    'awslabs.aws_api_mcp_server.server': MagicMock(),
-    'awslabs.aws_bedrock_data_automation_mcp_server.server': MagicMock(),
-    'awslabs.aws_dataprocessing_mcp_server.server': MagicMock(),
-    'awslabs.aws_diagram_mcp_server.server': MagicMock(),
-    'awslabs.aws_documentation_mcp_server.server_aws': MagicMock(),
-    'awslabs.aws_healthomics_mcp_server.server': MagicMock(),
-    'awslabs.aws_location_server.server': MagicMock(),
-    'awslabs.aws_pricing_mcp_server.server': MagicMock(),
-    'awslabs.aws_serverless_mcp_server.server': MagicMock(),
-    'awslabs.aws_support_mcp_server.server': MagicMock(),
-    'awslabs.bedrock_kb_retrieval_mcp_server.server': MagicMock(),
-    'awslabs.cdk_mcp_server.core.server': MagicMock(),
-    'awslabs.cfn_mcp_server.server': MagicMock(),
-    'awslabs.cloudwatch_appsignals_mcp_server.server': MagicMock(),
-    'awslabs.cloudwatch_mcp_server.server': MagicMock(),
-    'awslabs.code_doc_gen_mcp_server.server': MagicMock(),
-    'awslabs.cost_explorer_mcp_server.server': MagicMock(),
-    'awslabs.documentdb_mcp_server.server': MagicMock(),
-    'awslabs.dynamodb_mcp_server.server': MagicMock(),
-    'awslabs.ecs_mcp_server.main': MagicMock(),
-    'awslabs.eks_mcp_server.server': MagicMock(),
-    'awslabs.elasticache_mcp_server.main': MagicMock(),
-    'awslabs.finch_mcp_server.server': MagicMock(),
-    'awslabs.frontend_mcp_server.server': MagicMock(),
-    'awslabs.git_repo_research_mcp_server.server': MagicMock(),
-    'awslabs.iam_mcp_server.server': MagicMock(),
-    'awslabs.lambda_tool_mcp_server.server': MagicMock(),
-    'awslabs.memcached_mcp_server.main': MagicMock(),
-    'awslabs.mysql_mcp_server.server': MagicMock(),
-    'awslabs.nova_canvas_mcp_server.server': MagicMock(),
-    'awslabs.postgres_mcp_server.server': MagicMock(),
-    'awslabs.prometheus_mcp_server.server': MagicMock(),
-    'awslabs.redshift_mcp_server.server': MagicMock(),
-    'awslabs.s3_tables_mcp_server.server': MagicMock(),
-    'awslabs.stepfunctions_tool_mcp_server.server': MagicMock(),
-    'awslabs.syntheticdata_mcp_server.server': MagicMock(),
-    'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(),
+    'awslabs.amazon_mq_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.amazon_neptune_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.amazon_qbusiness_anonymous_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.amazon_rekognition_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.amazon_sns_sqs_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aurora_dsql_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_api_mcp_server.server': MagicMock(server=MagicMock()),
+    'awslabs.aws_bedrock_data_automation_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_dataprocessing_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_diagram_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_documentation_mcp_server.server_aws': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_healthomics_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_location_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_pricing_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_serverless_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.aws_support_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.bedrock_kb_retrieval_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cdk_mcp_server.core.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cfn_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cloudwatch_appsignals_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cloudwatch_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.code_doc_gen_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cost_explorer_mcp_server.server': MagicMock(app=MagicMock()),
+    'awslabs.documentdb_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.dynamodb_mcp_server.server': MagicMock(app=MagicMock()),
+    'awslabs.ecs_mcp_server.main': MagicMock(mcp=MagicMock()),
+    'awslabs.eks_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.elasticache_mcp_server.main': MagicMock(mcp=MagicMock()),
+    'awslabs.finch_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.frontend_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.git_repo_research_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.iam_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.lambda_tool_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.memcached_mcp_server.main': MagicMock(mcp=MagicMock()),
+    'awslabs.mysql_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.nova_canvas_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.postgres_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.prometheus_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.redshift_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.s3_tables_mcp_server.server': MagicMock(app=MagicMock()),
+    'awslabs.stepfunctions_tool_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.syntheticdata_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(mcp=MagicMock()),
 }
 
-# Patch async functions in FastMCP so 'await' works in tests
-fastmcp_mock = mock_modules['fastmcp']
-fastmcp_instance = fastmcp_mock.FastMCP.return_value
-# fastmcp_instance.tool = AsyncMock()
-# fastmcp_instance.run = AsyncMock()
-fastmcp_instance.start = AsyncMock()
+# Create a mock for the ProxyClient class
+mock_proxy_client = MagicMock()
+
+# Set up the FastMCP mock with our implementation
+fastmcp_mock = MagicMock()
+fastmcp_mock.FastMCP = MockFastMCP
+fastmcp_mock.server = MagicMock()
+fastmcp_mock.server.proxy = MagicMock()
+fastmcp_mock.server.proxy.ProxyClient = mock_proxy_client
+
+# Update the mock modules with our FastMCP implementation
+mock_modules.update(
+    {
+        'fastmcp': fastmcp_mock,
+        'fastmcp.server': fastmcp_mock.server,
+        'fastmcp.server.proxy': fastmcp_mock.server.proxy,
+    }
+)
 
 # Inject mocks globally
 sys.modules.update(mock_modules)
@@ -103,3 +178,15 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if 'live' in item.keywords:
                 item.add_marker(skip_live)
+
+
+@pytest.fixture
+def mock_fastmcp():
+    """Fixture to provide a MockFastMCP instance."""
+    return MockFastMCP('Test MCP Server', ['loguru'])
+
+
+@pytest.fixture
+def mock_proxy_client():
+    """Fixture to provide a mock ProxyClient."""
+    return mock_proxy_client

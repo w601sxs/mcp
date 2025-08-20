@@ -161,6 +161,39 @@ def get_prompt_understanding() -> str:
     return PROMPT_UNDERSTANDING
 
 
+# Helper function to import a server if not already imported
+async def call_import_server(server, prefix, server_name, imported_servers=None):
+    """Import an MCP server if not already imported.
+
+    This function imports an MCP server using the FastMCP.as_proxy method and
+    adds it to the set of imported servers to avoid duplicates.
+
+    Args:
+        server: The MCP server to import
+        prefix: The prefix to use for the server
+        server_name: The name of the server for logging purposes
+        imported_servers: A set of already imported server prefixes
+
+    Returns:
+        The updated set of imported servers
+    """
+    if imported_servers is None:
+        imported_servers = set()
+
+    if prefix not in imported_servers:
+        try:
+            local_proxy = FastMCP.as_proxy(
+                ProxyClient(server),
+            )
+            await mcp.import_server(local_proxy, prefix=prefix)
+            imported_servers.add(prefix)
+            logger.info(f'Successfully imported {server_name}')
+        except Exception as e:
+            logger.error(f'Failed to import {server_name}: {e}')
+
+    return imported_servers
+
+
 # Import subservers based on role configuration
 async def setup():
     """Set up and import MCP servers based on role-based environment variables.
@@ -197,200 +230,311 @@ async def setup():
     # Track which servers have been imported to avoid duplicates
     imported_servers = set()
 
-    # Helper function to import a server if not already imported
-    async def call_import_server(server, prefix, server_name):
-        if prefix not in imported_servers:
-            try:
-                local_proxy = FastMCP.as_proxy(
-                    ProxyClient(server),
-                )
-                await mcp.import_server(local_proxy, prefix=prefix)
-                imported_servers.add(prefix)
-                logger.info(f'Successfully imported {server_name}')
-            except Exception as e:
-                logger.error(f'Failed to import {server_name}: {e}')
-
     # AWS Knowledge Foundation
     if aws_knowledge_foundation:
         logger.info('Enabling AWS Knowledge Foundation servers')
-        await call_import_server(aws_documentation_server, 'aws_docs', 'aws_documentation_server')
-        await call_import_server(aws_api_server, 'aws_api', 'aws_api_server')
+        imported_servers = await call_import_server(
+            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            aws_api_server, 'aws_api', 'aws_api_server', imported_servers
+        )
 
     # Dev Tools
     if dev_tools:
         logger.info('Enabling Dev Tools servers')
-        await call_import_server(
-            git_repo_research_server, 'git_repo_research', 'git_repo_research_server'
+        imported_servers = await call_import_server(
+            git_repo_research_server,
+            'git_repo_research',
+            'git_repo_research_server',
+            imported_servers,
         )
-        await call_import_server(code_doc_gen_server, 'code_doc_gen', 'code_doc_gen_server')
-        await call_import_server(aws_documentation_server, 'aws_docs', 'aws_documentation_server')
+        imported_servers = await call_import_server(
+            code_doc_gen_server, 'code_doc_gen', 'code_doc_gen_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+        )
 
     # CI/CD DevOps
     if ci_cd_devops:
         logger.info('Enabling CI/CD DevOps servers')
-        await call_import_server(cdk_server, 'cdk', 'cdk_server')
-        await call_import_server(cfn_server, 'cfn', 'cfn_server')
+        imported_servers = await call_import_server(
+            cdk_server, 'cdk', 'cdk_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            cfn_server, 'cfn', 'cfn_server', imported_servers
+        )
         # terraform_server is commented out in imports
 
     # Container Orchestration
     if container_orchestration:
         logger.info('Enabling Container Orchestration servers')
-        await call_import_server(eks_server, 'eks', 'eks_server')
-        await call_import_server(ecs_server, 'ecs', 'ecs_server')
-        await call_import_server(finch_server, 'finch', 'finch_server')
+        imported_servers = await call_import_server(
+            eks_server, 'eks', 'eks_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            ecs_server, 'ecs', 'ecs_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            finch_server, 'finch', 'finch_server', imported_servers
+        )
 
     # Serverless Architecture
     if serverless_architecture:
         logger.info('Enabling Serverless Architecture servers')
-        await call_import_server(serverless_server, 'serverless', 'serverless_server')
-        await call_import_server(lambda_tool_server, 'lambda_tool', 'lambda_tool_server')
-        await call_import_server(
-            stepfunctions_tool_server, 'stepfunctions_tool', 'stepfunctions_tool_server'
+        imported_servers = await call_import_server(
+            serverless_server, 'serverless', 'serverless_server', imported_servers
         )
-        await call_import_server(sns_sqs_server, 'sns_sqs', 'sns_sqs_server')
+        imported_servers = await call_import_server(
+            lambda_tool_server, 'lambda_tool', 'lambda_tool_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            stepfunctions_tool_server,
+            'stepfunctions_tool',
+            'stepfunctions_tool_server',
+            imported_servers,
+        )
+        imported_servers = await call_import_server(
+            sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
+        )
 
     # Analytics Warehouse
     if analytics_warehouse:
         logger.info('Enabling Analytics Warehouse servers')
-        await call_import_server(redshift_server, 'redshift', 'redshift_server')
-        await call_import_server(
+        imported_servers = await call_import_server(
+            redshift_server, 'redshift', 'redshift_server', imported_servers
+        )
+        imported_servers = await call_import_server(
             timestream_for_influxdb_server,
             'timestream_for_influxdb',
             'timestream_for_influxdb_server',
+            imported_servers,
         )
-        await call_import_server(dataprocessing_server, 'dataprocessing', 'dataprocessing_server')
+        imported_servers = await call_import_server(
+            dataprocessing_server, 'dataprocessing', 'dataprocessing_server', imported_servers
+        )
         # msk_server is commented out in imports
-        await call_import_server(syntheticdata_server, 'syntheticdata', 'syntheticdata_server')
+        imported_servers = await call_import_server(
+            syntheticdata_server, 'syntheticdata', 'syntheticdata_server', imported_servers
+        )
 
     # Data Platform Engineering
     if data_platform_eng:
         logger.info('Enabling Data Platform Engineering servers')
-        await call_import_server(dynamodb_server, 'dynamodb', 'dynamodb_server')
-        await call_import_server(s3_tables_server, 's3_tables', 's3_tables_server')
-        await call_import_server(dataprocessing_server, 'dataprocessing', 'dataprocessing_server')
+        imported_servers = await call_import_server(
+            dynamodb_server, 'dynamodb', 'dynamodb_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            s3_tables_server, 's3_tables', 's3_tables_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            dataprocessing_server, 'dataprocessing', 'dataprocessing_server', imported_servers
+        )
         # msk_server is commented out in imports
 
     # Data Ingestion
     if data_ingestion:
         logger.info('Enabling Data Ingestion servers')
-        await call_import_server(sns_sqs_server, 'sns_sqs', 'sns_sqs_server')
-        await call_import_server(mq_server, 'mq', 'mq_server')
+        imported_servers = await call_import_server(
+            sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
+        )
+        imported_servers = await call_import_server(mq_server, 'mq', 'mq_server', imported_servers)
         # msk_server is commented out in imports
-        await call_import_server(cloudwatch_server, 'cloudwatch', 'cloudwatch_server')
+        imported_servers = await call_import_server(
+            cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
+        )
 
     # AI Development
     if ai_dev:
         logger.info('Enabling AI Development servers')
-        await call_import_server(
-            bedrock_kb_retrieval_server, 'bedrock_kb_retrieval', 'bedrock_kb_retrieval_server'
+        imported_servers = await call_import_server(
+            bedrock_kb_retrieval_server,
+            'bedrock_kb_retrieval',
+            'bedrock_kb_retrieval_server',
+            imported_servers,
         )
-        await call_import_server(nova_canvas_server, 'nova_canvas', 'nova_canvas_server')
-        await call_import_server(rekognition_server, 'rekognition', 'rekognition_server')
+        imported_servers = await call_import_server(
+            nova_canvas_server, 'nova_canvas', 'nova_canvas_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            rekognition_server, 'rekognition', 'rekognition_server', imported_servers
+        )
         # qindex_server is commented out in imports
-        await call_import_server(
-            qbusiness_anonymous_server, 'qbusiness_anonymous', 'qbusiness_anonymous_server'
+        imported_servers = await call_import_server(
+            qbusiness_anonymous_server,
+            'qbusiness_anonymous',
+            'qbusiness_anonymous_server',
+            imported_servers,
         )
-        await call_import_server(
+        imported_servers = await call_import_server(
             bedrock_data_automation_server,
             'bedrock_data_automation',
             'bedrock_data_automation_server',
+            imported_servers,
         )
 
     # Frontend Development
     if frontend_dev:
         logger.info('Enabling Frontend Development servers')
-        await call_import_server(frontend_server, 'frontend', 'frontend_server')
-        await call_import_server(nova_canvas_server, 'nova_canvas', 'nova_canvas_server')
+        imported_servers = await call_import_server(
+            frontend_server, 'frontend', 'frontend_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            nova_canvas_server, 'nova_canvas', 'nova_canvas_server', imported_servers
+        )
 
     # API Management
     if api_management:
         logger.info('Enabling API Management servers')
         # openapi_server is commented out in imports
-        await call_import_server(aws_api_server, 'aws_api', 'aws_api_server')
+        imported_servers = await call_import_server(
+            aws_api_server, 'aws_api', 'aws_api_server', imported_servers
+        )
 
     # Solutions Architect
     if solutions_architect:
         logger.info('Enabling Solutions Architect servers')
-        await call_import_server(diagram_server, 'diagram', 'diagram_server')
-        await call_import_server(pricing_server, 'pricing', 'pricing_server')
-        await call_import_server(cost_explorer_server, 'cost_explorer', 'cost_explorer_server')
-        await call_import_server(syntheticdata_server, 'syntheticdata', 'syntheticdata_server')
-        await call_import_server(aws_documentation_server, 'aws_docs', 'aws_documentation_server')
+        imported_servers = await call_import_server(
+            diagram_server, 'diagram', 'diagram_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            pricing_server, 'pricing', 'pricing_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            cost_explorer_server, 'cost_explorer', 'cost_explorer_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            syntheticdata_server, 'syntheticdata', 'syntheticdata_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+        )
 
     # FinOps
     if finops:
         logger.info('Enabling FinOps servers')
-        await call_import_server(cost_explorer_server, 'cost_explorer', 'cost_explorer_server')
-        await call_import_server(pricing_server, 'pricing', 'pricing_server')
-        await call_import_server(cloudwatch_server, 'cloudwatch', 'cloudwatch_server')
+        imported_servers = await call_import_server(
+            cost_explorer_server, 'cost_explorer', 'cost_explorer_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            pricing_server, 'pricing', 'pricing_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
+        )
 
     # Monitoring & Observability
     if monitoring_observability:
         logger.info('Enabling Monitoring & Observability servers')
-        await call_import_server(cloudwatch_server, 'cloudwatch', 'cloudwatch_server')
-        await call_import_server(
-            cloudwatch_appsignals_server, 'cloudwatch_appsignals', 'cloudwatch_appsignals_server'
+        imported_servers = await call_import_server(
+            cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
         )
-        await call_import_server(prometheus_server, 'prometheus', 'prometheus_server')
+        imported_servers = await call_import_server(
+            cloudwatch_appsignals_server,
+            'cloudwatch_appsignals',
+            'cloudwatch_appsignals_server',
+            imported_servers,
+        )
+        imported_servers = await call_import_server(
+            prometheus_server, 'prometheus', 'prometheus_server', imported_servers
+        )
 
     # Caching & Performance
     if caching_performance:
         logger.info('Enabling Caching & Performance servers')
-        await call_import_server(elasticache_server, 'elasticache', 'elasticache_server')
+        imported_servers = await call_import_server(
+            elasticache_server, 'elasticache', 'elasticache_server', imported_servers
+        )
         # valkey_server is commented out in imports
-        await call_import_server(memcached_server, 'memcached', 'memcached_server')
+        imported_servers = await call_import_server(
+            memcached_server, 'memcached', 'memcached_server', imported_servers
+        )
 
     # Security & Identity
     if security_identity:
         logger.info('Enabling Security & Identity servers')
-        await call_import_server(iam_server, 'iam', 'iam_server')
-        await call_import_server(support_server, 'support', 'support_server')
+        imported_servers = await call_import_server(
+            iam_server, 'iam', 'iam_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            support_server, 'support', 'support_server', imported_servers
+        )
 
     # SQL DB Specialist
     if sql_db_specialist:
         logger.info('Enabling SQL DB Specialist servers')
-        await call_import_server(postgres_server, 'postgres', 'postgres_server')
-        await call_import_server(mysql_server, 'mysql', 'mysql_server')
-        await call_import_server(aurora_dsql_server, 'aurora_dsql', 'aurora_dsql_server')
-        await call_import_server(redshift_server, 'redshift', 'redshift_server')
+        imported_servers = await call_import_server(
+            postgres_server, 'postgres', 'postgres_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            mysql_server, 'mysql', 'mysql_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            aurora_dsql_server, 'aurora_dsql', 'aurora_dsql_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            redshift_server, 'redshift', 'redshift_server', imported_servers
+        )
 
     # NoSQL DB Specialist
     if nosql_db_specialist:
         logger.info('Enabling NoSQL DB Specialist servers')
-        await call_import_server(dynamodb_server, 'dynamodb', 'dynamodb_server')
-        await call_import_server(documentdb_server, 'documentdb', 'documentdb_server')
-        await call_import_server(keyspaces_server, 'keyspaces', 'keyspaces_server')
-        await call_import_server(neptune_server, 'neptune', 'neptune_server')
+        imported_servers = await call_import_server(
+            dynamodb_server, 'dynamodb', 'dynamodb_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            documentdb_server, 'documentdb', 'documentdb_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            keyspaces_server, 'keyspaces', 'keyspaces_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            neptune_server, 'neptune', 'neptune_server', imported_servers
+        )
 
     # Time Series DB Specialist
     if timeseries_db_specialist:
         logger.info('Enabling Time Series DB Specialist servers')
-        await call_import_server(
+        imported_servers = await call_import_server(
             timestream_for_influxdb_server,
             'timestream_for_influxdb',
             'timestream_for_influxdb_server',
+            imported_servers,
         )
-        await call_import_server(prometheus_server, 'prometheus', 'prometheus_server')
-        await call_import_server(cloudwatch_server, 'cloudwatch', 'cloudwatch_server')
+        imported_servers = await call_import_server(
+            prometheus_server, 'prometheus', 'prometheus_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
+        )
         # msk_server is commented out in imports
 
     # Messaging & Events
     if messaging_events:
         logger.info('Enabling Messaging & Events servers')
-        await call_import_server(sns_sqs_server, 'sns_sqs', 'sns_sqs_server')
-        await call_import_server(mq_server, 'mq', 'mq_server')
+        imported_servers = await call_import_server(
+            sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
+        )
+        imported_servers = await call_import_server(mq_server, 'mq', 'mq_server', imported_servers)
         # msk_server is commented out in imports
 
     # Geospatial Services
     if geospatial_services:
         logger.info('Enabling Geospatial Services servers')
-        await call_import_server(location_server, 'location', 'location_server')
-        await call_import_server(neptune_server, 'neptune', 'neptune_server')
+        imported_servers = await call_import_server(
+            location_server, 'location', 'location_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            neptune_server, 'neptune', 'neptune_server', imported_servers
+        )
 
     # Healthcare & Life Sciences
     if healthcare_lifesci:
         logger.info('Enabling Healthcare & Life Sciences servers')
-        await call_import_server(healthomics_server, 'healthomics', 'healthomics_server')
+        imported_servers = await call_import_server(
+            healthomics_server, 'healthomics', 'healthomics_server', imported_servers
+        )
 
 
 def main() -> None:
