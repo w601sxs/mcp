@@ -17,6 +17,7 @@ import asyncio
 import importlib
 import os
 import pytest
+from awslabs.core_mcp_server import server
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -77,7 +78,6 @@ mock_modules = {
     'awslabs.syntheticdata_mcp_server.server': MagicMock(),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(),
 }
-from awslabs.core_mcp_server import server
 
 
 # ---- Add fastmcp mocks so server.py import works ----
@@ -204,6 +204,16 @@ class TestSetup:
     )
     @pytest.mark.asyncio
     async def test_setup_role_variables(self, monkeypatch, role_env_var, expected_prefixes):
+        """Test that setup function correctly imports servers based on role environment variables.
+
+        This test verifies that when a specific role environment variable is set,
+        the setup function attempts to import the expected server prefixes.
+
+        Args:
+            monkeypatch: Pytest fixture for modifying environment variables
+            role_env_var: The role environment variable to set
+            expected_prefixes: List of server prefixes expected to be imported for this role
+        """
         # 1. Set the environment variable
         monkeypatch.setitem(os.environ, role_env_var, '1')
 
