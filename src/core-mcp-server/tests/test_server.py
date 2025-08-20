@@ -14,6 +14,7 @@
 """Tests for the Core MCP Server."""
 
 import asyncio
+import importlib
 import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -76,6 +77,7 @@ mock_modules = {
     'awslabs.syntheticdata_mcp_server.server': MagicMock(),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(),
 }
+from awslabs.core_mcp_server import server
 
 
 # ---- Add fastmcp mocks so server.py import works ----
@@ -154,6 +156,75 @@ class TestPromptUnderstanding:
 
 class TestSetup:
     """Tests for setup function."""
+
+    @pytest.mark.parametrize(
+        'role_env_var,expected_prefixes',
+        [
+            ('aws-knowledge-foundation', ['aws_docs', 'aws_api']),
+            ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_docs']),
+            ('ci-cd-devops', ['cdk', 'cfn']),
+            ('container-orchestration', ['eks', 'ecs', 'finch']),
+            (
+                'serverless-architecture',
+                ['serverless', 'lambda_tool', 'stepfunctions_tool', 'sns_sqs'],
+            ),
+            (
+                'analytics-warehouse',
+                ['redshift', 'timestream_for_influxdb', 'dataprocessing', 'syntheticdata'],
+            ),
+            ('data-platform-eng', ['dynamodb', 's3_tables', 'dataprocessing']),
+            ('data-ingestion', ['sns_sqs', 'mq', 'cloudwatch']),
+            (
+                'ai-dev',
+                [
+                    'bedrock_kb_retrieval',
+                    'nova_canvas',
+                    'rekognition',
+                    'qbusiness_anonymous',
+                    'bedrock_data_automation',
+                ],
+            ),
+            ('frontend-dev', ['frontend', 'nova_canvas']),
+            ('api-management', ['aws_api']),
+            (
+                'solutions-architect',
+                ['diagram', 'pricing', 'cost_explorer', 'syntheticdata', 'aws_docs'],
+            ),
+            ('finops', ['cost_explorer', 'pricing', 'cloudwatch']),
+            ('monitoring-observability', ['cloudwatch', 'cloudwatch_appsignals', 'prometheus']),
+            ('caching-performance', ['elasticache', 'memcached']),
+            ('security-identity', ['iam', 'support']),
+            ('sql-db-specialist', ['postgres', 'mysql', 'aurora_dsql', 'redshift']),
+            ('nosql-db-specialist', ['dynamodb', 'documentdb', 'keyspaces', 'neptune']),
+            ('timeseries-db-specialist', ['timestream_for_influxdb', 'prometheus', 'cloudwatch']),
+            ('messaging-events', ['sns_sqs', 'mq']),
+            ('geospatial-services', ['location', 'neptune']),
+            ('healthcare-lifesci', ['healthomics']),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_setup_role_variables(self, monkeypatch, role_env_var, expected_prefixes):
+        # 1. Set the environment variable
+        monkeypatch.setitem(os.environ, role_env_var, '1')
+
+        # 2. Reload the server module so it picks up the env variable
+        importlib.reload(server)
+
+        # 3. Patch call_import_server to just record what gets imported
+        called = set()
+
+        async def fake_import(srv, prefix, name, imported):
+            called.add(prefix)
+            return imported | {prefix}
+
+        monkeypatch.setattr(server, 'call_import_server', fake_import)
+
+        # 4. Run setup
+        await server.setup()
+
+        # 5. Assert that all expected subservers for this role were attempted
+        for prefix in expected_prefixes:
+            assert prefix in called
 
     @pytest.mark.asyncio
     @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
@@ -838,44 +909,6 @@ class TestSetup:
                     import awslabs.core_mcp_server.server as server
 
                     server.call_import_server = original_call_import_server
-
-    @pytest.mark.parametrize(
-        'role_env_var',
-        [
-            'aws-knowledge-foundation',
-            'dev-tools',
-            'ci-cd-devops',
-            'container-orchestration',
-            'serverless-architecture',
-            'analytics-warehouse',
-            'data-platform-eng',
-            'data-ingestion',
-            'ai-dev',
-            'frontend-dev',
-            'api-management',
-            'solutions-architect',
-            'finops',
-            'monitoring-observability',
-            'caching-performance',
-            'security-identity',
-            'sql-db-specialist',
-            'nosql-db-specialist',
-            'timeseries-db-specialist',
-            'messaging-events',
-            'geospatial-services',
-            'healthcare-lifesci',
-        ],
-    )
-    def test_setup_role_variables(self, role_env_var):
-        """Test that role environment variables are correctly defined."""
-        # Import the server module
-        with patch.dict('sys.modules', mock_modules):
-            # Import the server module
-            import awslabs.core_mcp_server.server as server
-
-            # Check that the role variable is defined
-            role_var_name = role_env_var.replace('-', '_')
-            assert hasattr(server, role_var_name)
 
 
 class TestCallImportServer:

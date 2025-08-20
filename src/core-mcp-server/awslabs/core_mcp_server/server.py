@@ -81,30 +81,6 @@ prompt_understanding_path = current_dir / 'static' / 'PROMPT_UNDERSTANDING.md'
 with open(prompt_understanding_path, 'r', encoding='utf-8') as f:
     PROMPT_UNDERSTANDING = f.read()
 
-# roles - environment variables for role-based server configuration
-aws_knowledge_foundation = os.environ.get('aws-knowledge-foundation')
-dev_tools = os.environ.get('dev-tools')
-ci_cd_devops = os.environ.get('ci-cd-devops')
-container_orchestration = os.environ.get('container-orchestration')
-serverless_architecture = os.environ.get('serverless-architecture')
-analytics_warehouse = os.environ.get('analytics-warehouse')
-data_platform_eng = os.environ.get('data-platform-eng')
-data_ingestion = os.environ.get('data-ingestion')
-ai_dev = os.environ.get('ai-dev')
-frontend_dev = os.environ.get('frontend-dev')
-api_management = os.environ.get('api-management')
-solutions_architect = os.environ.get('solutions-architect')
-finops = os.environ.get('finops')
-monitoring_observability = os.environ.get('monitoring-observability')
-caching_performance = os.environ.get('caching-performance')
-security_identity = os.environ.get('security-identity')
-sql_db_specialist = os.environ.get('sql-db-specialist')
-nosql_db_specialist = os.environ.get('nosql-db-specialist')
-timeseries_db_specialist = os.environ.get('timeseries-db-specialist')
-messaging_events = os.environ.get('messaging-events')
-geospatial_services = os.environ.get('geospatial-services')
-healthcare_lifesci = os.environ.get('healthcare-lifesci')
-
 
 class ContentItem(TypedDict):
     """A TypedDict representing a single content item in an MCP response.
@@ -227,6 +203,29 @@ async def setup():
     - Geospatial Services
     - Healthcare & Life Sciences
     """
+    # roles - environment variables for role-based server configuration
+    aws_knowledge_foundation = os.environ.get('aws-knowledge-foundation')
+    dev_tools = os.environ.get('dev-tools')
+    ci_cd_devops = os.environ.get('ci-cd-devops')
+    container_orchestration = os.environ.get('container-orchestration')
+    serverless_architecture = os.environ.get('serverless-architecture')
+    analytics_warehouse = os.environ.get('analytics-warehouse')
+    data_platform_eng = os.environ.get('data-platform-eng')
+    data_ingestion = os.environ.get('data-ingestion')
+    ai_dev = os.environ.get('ai-dev')
+    frontend_dev = os.environ.get('frontend-dev')
+    api_management = os.environ.get('api-management')
+    solutions_architect = os.environ.get('solutions-architect')
+    finops = os.environ.get('finops')
+    monitoring_observability = os.environ.get('monitoring-observability')
+    caching_performance = os.environ.get('caching-performance')
+    security_identity = os.environ.get('security-identity')
+    sql_db_specialist = os.environ.get('sql-db-specialist')
+    nosql_db_specialist = os.environ.get('nosql-db-specialist')
+    timeseries_db_specialist = os.environ.get('timeseries-db-specialist')
+    messaging_events = os.environ.get('messaging-events')
+    geospatial_services = os.environ.get('geospatial-services')
+    healthcare_lifesci = os.environ.get('healthcare-lifesci')
     # Track which servers have been imported to avoid duplicates
     imported_servers = set()
 
