@@ -19,7 +19,6 @@ import sys
 from unittest.mock import MagicMock
 
 
-# --- Create a minimal FastMCP implementation for testing ---
 class MockFunctionTool:
     """Mock implementation of the FunctionTool class for testing purposes."""
 
