@@ -77,8 +77,7 @@ class MockFastMCP:
         return client
 
 
-# --- Global mocks for MCP servers ---
-# Create a more realistic mock for MCP servers
+# Create a mock for MCP servers
 def create_mock_server():
     """Create a mock server with a mcp attribute."""
     mock_server = MagicMock()
@@ -160,7 +159,6 @@ mock_modules.update(
 sys.modules.update(mock_modules)
 
 
-# --- pytest markers & options ---
 def pytest_addoption(parser):
     """Add command-line options to pytest."""
     parser.addoption(

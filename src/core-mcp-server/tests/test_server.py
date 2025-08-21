@@ -80,7 +80,6 @@ mock_modules = {
 }
 
 
-# ---- Add fastmcp mocks so server.py import works ----
 # Create a mock FunctionTool class that simulates the behavior of the actual FunctionTool class
 class MockFunctionTool:
     """Mock implementation of the FunctionTool class for testing purposes.
