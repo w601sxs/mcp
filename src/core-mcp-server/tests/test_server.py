@@ -37,7 +37,6 @@ mock_modules = {
     'awslabs.amazon_mq_mcp_server.server': MagicMock(),
     'awslabs.amazon_neptune_mcp_server.server': MagicMock(),
     'awslabs.amazon_qbusiness_anonymous_mcp_server.server': MagicMock(),
-    'awslabs.amazon_rekognition_mcp_server.server': MagicMock(),
     'awslabs.amazon_sns_sqs_mcp_server.server': MagicMock(),
     'awslabs.aurora_dsql_mcp_server.server': MagicMock(),
     'awslabs.aws_api_mcp_server.server': MagicMock(),
@@ -77,6 +76,10 @@ mock_modules = {
     'awslabs.stepfunctions_tool_mcp_server.server': MagicMock(),
     'awslabs.syntheticdata_mcp_server.server': MagicMock(),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(),
+    'awslabs.billing_cost_management_mcp_server.server': MagicMock(),
+    'awslabs.ccapi_mcp_server.server': MagicMock(),
+    'awslabs.cloudtrail_mcp_server.server': MagicMock(),
+    'awslabs.well_architected_security_mcp_server.server': MagicMock(),
 }
 
 
@@ -161,7 +164,7 @@ class TestSetup:
         [
             ('aws-knowledge-foundation', ['aws_docs', 'aws_api']),
             ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_docs']),
-            ('ci-cd-devops', ['cdk', 'cfn']),
+            ('ci-cd-devops', ['cdk', 'cfn', 'ccapi']),
             ('container-orchestration', ['eks', 'ecs', 'finch']),
             (
                 'serverless-architecture',
@@ -178,7 +181,6 @@ class TestSetup:
                 [
                     'bedrock_kb_retrieval',
                     'nova_canvas',
-                    'rekognition',
                     'qbusiness_anonymous',
                     'bedrock_data_automation',
                 ],
@@ -189,10 +191,13 @@ class TestSetup:
                 'solutions-architect',
                 ['diagram', 'pricing', 'cost_explorer', 'syntheticdata', 'aws_docs'],
             ),
-            ('finops', ['cost_explorer', 'pricing', 'cloudwatch']),
-            ('monitoring-observability', ['cloudwatch', 'cloudwatch_appsignals', 'prometheus']),
+            ('finops', ['cost_explorer', 'pricing', 'cloudwatch', 'billing_cost_management']),
+            (
+                'monitoring-observability',
+                ['cloudwatch', 'cloudwatch_appsignals', 'prometheus', 'cloudtrail'],
+            ),
             ('caching-performance', ['elasticache', 'memcached']),
-            ('security-identity', ['iam', 'support']),
+            ('security-identity', ['iam', 'support', 'well-architected-security']),
             ('sql-db-specialist', ['postgres', 'mysql', 'aurora_dsql', 'redshift']),
             ('nosql-db-specialist', ['dynamodb', 'documentdb', 'keyspaces', 'neptune']),
             ('timeseries-db-specialist', ['timestream_for_influxdb', 'prometheus', 'cloudwatch']),

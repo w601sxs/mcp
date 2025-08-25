@@ -93,7 +93,6 @@ mock_modules = {
     'awslabs.amazon_mq_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.amazon_neptune_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.amazon_qbusiness_anonymous_mcp_server.server': MagicMock(mcp=MagicMock()),
-    'awslabs.amazon_rekognition_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.amazon_sns_sqs_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.aurora_dsql_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.aws_api_mcp_server.server': MagicMock(server=MagicMock()),
@@ -133,6 +132,10 @@ mock_modules = {
     'awslabs.stepfunctions_tool_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.syntheticdata_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.billing_cost_management_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.ccapi_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.cloudtrail_mcp_server.server': MagicMock(mcp=MagicMock()),
+    'awslabs.well_architected_security_mcp_server.server': MagicMock(mcp=MagicMock()),
 }
 
 # Create a mock for the ProxyClient class

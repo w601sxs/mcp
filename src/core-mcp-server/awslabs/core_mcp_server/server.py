@@ -23,7 +23,6 @@ from awslabs.amazon_keyspaces_mcp_server.server import mcp as keyspaces_server
 from awslabs.amazon_mq_mcp_server.server import mcp as mq_server
 from awslabs.amazon_neptune_mcp_server.server import mcp as neptune_server
 from awslabs.amazon_qbusiness_anonymous_mcp_server.server import mcp as qbusiness_anonymous_server
-from awslabs.amazon_rekognition_mcp_server.server import mcp as rekognition_server
 from awslabs.amazon_sns_sqs_mcp_server.server import mcp as sns_sqs_server
 from awslabs.aurora_dsql_mcp_server.server import mcp as aurora_dsql_server
 from awslabs.aws_api_mcp_server.server import server as aws_api_server
@@ -39,8 +38,11 @@ from awslabs.aws_pricing_mcp_server.server import mcp as pricing_server
 from awslabs.aws_serverless_mcp_server.server import mcp as serverless_server
 from awslabs.aws_support_mcp_server.server import mcp as support_server
 from awslabs.bedrock_kb_retrieval_mcp_server.server import mcp as bedrock_kb_retrieval_server
+from awslabs.billing_cost_management_mcp_server.server import mcp as billing_cost_management_server
+from awslabs.ccapi_mcp_server.server import mcp as ccapi_mcp_server
 from awslabs.cdk_mcp_server.core.server import mcp as cdk_server
 from awslabs.cfn_mcp_server.server import mcp as cfn_server
+from awslabs.cloudtrail_mcp_server.server import mcp as cloudtrail_server
 from awslabs.cloudwatch_appsignals_mcp_server.server import mcp as cloudwatch_appsignals_server
 from awslabs.cloudwatch_mcp_server.server import mcp as cloudwatch_server
 from awslabs.code_doc_gen_mcp_server.server import mcp as code_doc_gen_server
@@ -65,6 +67,9 @@ from awslabs.s3_tables_mcp_server.server import app as s3_tables_server
 from awslabs.stepfunctions_tool_mcp_server.server import mcp as stepfunctions_tool_server
 from awslabs.syntheticdata_mcp_server.server import mcp as syntheticdata_server
 from awslabs.timestream_for_influxdb_mcp_server.server import mcp as timestream_for_influxdb_server
+from awslabs.well_architected_security_mcp_server.server import (
+    mcp as well_architected_security_server,
+)
 from fastmcp import FastMCP
 
 # from awslabs.amazon_qindex_mcp_server.server import mcp as qindex_server --> need to modify server to fix logger.remove(0)
@@ -75,6 +80,8 @@ from fastmcp import FastMCP
 from fastmcp.server.proxy import ProxyClient
 from typing import List, TypedDict
 
+
+# - well-architected-security-mcp-server, - cloudtrail-mcp-server, - billing-cost-management-mcp-server
 
 current_dir = pathlib.Path(__file__).parent
 prompt_understanding_path = current_dir / 'static' / 'PROMPT_UNDERSTANDING.md'
@@ -264,6 +271,9 @@ async def setup():
         imported_servers = await call_import_server(
             cfn_server, 'cfn', 'cfn_server', imported_servers
         )
+        imported_servers = await call_import_server(
+            ccapi_mcp_server, 'ccapi', 'ccapi_mcp_server', imported_servers
+        )
         # terraform_server is commented out in imports
 
     # Container Orchestration
@@ -356,9 +366,6 @@ async def setup():
         imported_servers = await call_import_server(
             nova_canvas_server, 'nova_canvas', 'nova_canvas_server', imported_servers
         )
-        imported_servers = await call_import_server(
-            rekognition_server, 'rekognition', 'rekognition_server', imported_servers
-        )
         # qindex_server is commented out in imports
         imported_servers = await call_import_server(
             qbusiness_anonymous_server,
@@ -422,6 +429,12 @@ async def setup():
         imported_servers = await call_import_server(
             cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
         )
+        imported_servers = await call_import_server(
+            billing_cost_management_server,
+            'billing_cost_management',
+            'billing_cost_management_server',
+            imported_servers,
+        )
 
     # Monitoring & Observability
     if monitoring_observability:
@@ -437,6 +450,9 @@ async def setup():
         )
         imported_servers = await call_import_server(
             prometheus_server, 'prometheus', 'prometheus_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            cloudtrail_server, 'cloudtrail', 'cloudtrail_server', imported_servers
         )
 
     # Caching & Performance
@@ -458,6 +474,12 @@ async def setup():
         )
         imported_servers = await call_import_server(
             support_server, 'support', 'support_server', imported_servers
+        )
+        imported_servers = await call_import_server(
+            well_architected_security_server,
+            'well-architected-security',
+            ' well_architected_security_server',
+            imported_servers,
         )
 
     # SQL DB Specialist
