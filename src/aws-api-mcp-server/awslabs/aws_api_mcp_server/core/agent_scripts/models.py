@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""awslabs.aws-api-mcp-server"""
+"""Agent script data models."""
 
-__version__ = '0.2.9'
+from pydantic import BaseModel
+
+
+class Script(BaseModel):
+    """Script model with name, description, and content."""
+
+    name: str
+    description: str
+    content: str

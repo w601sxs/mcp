@@ -12,6 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""awslabs.aws-api-mcp-server"""
-
-__version__ = '0.2.9'
+"""Module providing support for Agent Scripts functionality."""
