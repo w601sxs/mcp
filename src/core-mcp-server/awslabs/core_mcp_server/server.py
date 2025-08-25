@@ -39,7 +39,8 @@ from awslabs.aws_serverless_mcp_server.server import mcp as serverless_server
 from awslabs.aws_support_mcp_server.server import mcp as support_server
 from awslabs.bedrock_kb_retrieval_mcp_server.server import mcp as bedrock_kb_retrieval_server
 from awslabs.billing_cost_management_mcp_server.server import mcp as billing_cost_management_server
-from awslabs.ccapi_mcp_server.server import mcp as ccapi_mcp_server
+
+# from awslabs.ccapi_mcp_server.server import mcp as ccapi_mcp_server
 from awslabs.cdk_mcp_server.core.server import mcp as cdk_server
 from awslabs.cfn_mcp_server.server import mcp as cfn_server
 from awslabs.cloudtrail_mcp_server.server import mcp as cloudtrail_server
@@ -271,9 +272,9 @@ async def setup():
         imported_servers = await call_import_server(
             cfn_server, 'cfn', 'cfn_server', imported_servers
         )
-        imported_servers = await call_import_server(
+        """imported_servers = await call_import_server(
             ccapi_mcp_server, 'ccapi', 'ccapi_mcp_server', imported_servers
-        )
+        )"""
         # terraform_server is commented out in imports
 
     # Container Orchestration

@@ -596,23 +596,6 @@ wheels = [
 ]
 
 [[package]]
-name = "awslabs-ccapi-mcp-server"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "botocore" },
-    { name = "checkov" },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/82/9649129ad35f50e77d2f67b5a9f8933da624e3209db0fda7a48e1af1dd03/awslabs_ccapi_mcp_server-1.0.4.tar.gz", hash = "sha256:2b443e2c692856993790ca3a3f43f1f22506679a75ef63314da1dfe6f63ac12f", size = 232692, upload-time = "2025-08-22T19:21:39.56Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/09/0fdf72661fad3a88aff1cc83ee2c09b31501626bf393725827e2b82a3706/awslabs_ccapi_mcp_server-1.0.4-py3-none-any.whl", hash = "sha256:bbe0b727807dc99a1fe86120c52b2d76c8dd2330df2f46191f6c451e82b1f95a", size = 58522, upload-time = "2025-08-22T19:21:38.112Z" },
-]
-
-[[package]]
 name = "awslabs-cdk-mcp-server"
 version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -747,7 +730,6 @@ dependencies = [
     { name = "awslabs-aws-support-mcp-server" },
     { name = "awslabs-bedrock-kb-retrieval-mcp-server" },
     { name = "awslabs-billing-cost-management-mcp-server" },
-    { name = "awslabs-ccapi-mcp-server" },
     { name = "awslabs-cdk-mcp-server" },
     { name = "awslabs-cfn-mcp-server" },
     { name = "awslabs-cloudtrail-mcp-server" },
@@ -821,7 +803,6 @@ requires-dist = [
     { name = "awslabs-aws-support-mcp-server", specifier = ">=0.1.7" },
     { name = "awslabs-bedrock-kb-retrieval-mcp-server", specifier = ">=1.0.4" },
     { name = "awslabs-billing-cost-management-mcp-server", specifier = ">=0.0.2" },
-    { name = "awslabs-ccapi-mcp-server", specifier = ">=1.0.4" },
     { name = "awslabs-cdk-mcp-server", specifier = ">=1.0.4" },
     { name = "awslabs-cfn-mcp-server", specifier = ">=1.0.6" },
     { name = "awslabs-cloudtrail-mcp-server", specifier = ">=0.0.1" },

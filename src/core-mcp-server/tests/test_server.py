@@ -77,7 +77,6 @@ mock_modules = {
     'awslabs.syntheticdata_mcp_server.server': MagicMock(),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(),
     'awslabs.billing_cost_management_mcp_server.server': MagicMock(),
-    'awslabs.ccapi_mcp_server.server': MagicMock(),
     'awslabs.cloudtrail_mcp_server.server': MagicMock(),
     'awslabs.well_architected_security_mcp_server.server': MagicMock(),
 }
@@ -164,7 +163,7 @@ class TestSetup:
         [
             ('aws-knowledge-foundation', ['aws_docs', 'aws_api']),
             ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_docs']),
-            ('ci-cd-devops', ['cdk', 'cfn', 'ccapi']),
+            ('ci-cd-devops', ['cdk', 'cfn']),
             ('container-orchestration', ['eks', 'ecs', 'finch']),
             (
                 'serverless-architecture',

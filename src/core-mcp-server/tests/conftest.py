@@ -133,7 +133,6 @@ mock_modules = {
     'awslabs.syntheticdata_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.timestream_for_influxdb_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.billing_cost_management_mcp_server.server': MagicMock(mcp=MagicMock()),
-    'awslabs.ccapi_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.cloudtrail_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.well_architected_security_mcp_server.server': MagicMock(mcp=MagicMock()),
 }

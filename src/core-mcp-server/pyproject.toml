@@ -26,7 +26,6 @@ dependencies = [
     "awslabs-aws-support-mcp-server>=0.1.7",
     "awslabs-bedrock-kb-retrieval-mcp-server>=1.0.4",
     "awslabs-billing-cost-management-mcp-server>=0.0.2",
-    "awslabs-ccapi-mcp-server>=1.0.4",
     "awslabs-cdk-mcp-server>=1.0.4",
     "awslabs-cfn-mcp-server>=1.0.6",
     "awslabs-cloudtrail-mcp-server>=0.0.1",
