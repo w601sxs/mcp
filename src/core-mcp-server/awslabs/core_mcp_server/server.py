@@ -167,7 +167,7 @@ async def setup():
     # Track which servers have been imported to avoid duplicates
     imported_servers = set()
 
-    # AWS Knowledge Foundation
+    # AWS Foundation
     if aws_foundation:
         from awslabs.aws_api_mcp_server.server import server as aws_api_server
 
@@ -240,10 +240,6 @@ async def setup():
         imported_servers = await call_import_server(
             cfn_server, 'cfn', 'cfn_server', imported_servers
         )
-        """imported_servers = await call_import_server(
-            ccapi_mcp_server, 'ccapi', 'ccapi_mcp_server', imported_servers
-        )"""
-        # terraform_server is commented out in imports
 
     # Container Orchestration
     if container_orchestration:
@@ -308,7 +304,6 @@ async def setup():
         imported_servers = await call_import_server(
             dataprocessing_server, 'dataprocessing', 'dataprocessing_server', imported_servers
         )
-        # msk_server is commented out in imports
         imported_servers = await call_import_server(
             syntheticdata_server, 'syntheticdata', 'syntheticdata_server', imported_servers
         )
@@ -329,7 +324,6 @@ async def setup():
         imported_servers = await call_import_server(
             dataprocessing_server, 'dataprocessing', 'dataprocessing_server', imported_servers
         )
-        # msk_server is commented out in imports
 
     # Frontend Development
     if frontend_dev:
@@ -444,7 +438,6 @@ async def setup():
         imported_servers = await call_import_server(
             elasticache_server, 'elasticache', 'elasticache_server', imported_servers
         )
-        # valkey_server is commented out in imports
         imported_servers = await call_import_server(
             memcached_server, 'memcached', 'memcached_server', imported_servers
         )
@@ -534,7 +527,6 @@ async def setup():
         imported_servers = await call_import_server(
             cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
         )
-        # msk_server is commented out in imports
 
     # Messaging & Events
     if messaging_events:
@@ -546,7 +538,6 @@ async def setup():
             sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
         )
         imported_servers = await call_import_server(mq_server, 'mq', 'mq_server', imported_servers)
-        # msk_server is commented out in imports
 
     # Healthcare & Life Sciences
     if healthcare_lifesci:
