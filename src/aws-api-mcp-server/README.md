@@ -133,25 +133,36 @@ For detailed instructions on setting up your local development environment and r
 
 ### 🌐 HTTP Mode Configuration
 
-The MCP server supports streamable HTTP mode. To use it, set the `AWS_API_MCP_TRANSPORT` environment variable to `"streamable-http"` and optionally configure the port with `AWS_API_MCP_PORT`.
+The MCP server supports streamable HTTP mode. To use it, when starting the server set the `AWS_API_MCP_TRANSPORT` environment variable to `"streamable-http"` and optionally configure the port with `AWS_API_MCP_PORT`.
 
-**Example HTTP mode configuration:**
+#### For Linux/macOS:
+```bash
+AWS_API_MCP_TRANSPORT=streamable-http uvx awslabs.aws-api-mcp-server@latest
+```
+
+#### For Windows (Command Prompt):
+```cmd
+set AWS_API_MCP_TRANSPORT=streamable-http
+uvx awslabs.aws-api-mcp-server@latest
+```
+
+#### For Windows (PowerShell):
+```powershell
+$env:AWS_API_MCP_TRANSPORT="streamable-http"
+uvx awslabs.aws-api-mcp-server@latest
+```
+
+Once the server is running, connect to it using the following configuration (ensure the port number matches your `AWS_API_MCP_PORT` setting):"
 
 ```json
 {
   "mcpServers": {
     "awslabs.aws-api-mcp-server": {
-      "command": "uvx",
-      "args": [
-        "awslabs.aws-api-mcp-server@latest"
-      ],
-      "env": {
-        "AWS_REGION": "us-east-1",
-        "AWS_API_MCP_TRANSPORT": "streamable-http",
-        "AWS_API_MCP_PORT": "8000"
-      },
+      "type": "streamableHttp",
+      "url": "http://127.0.0.1:8000/mcp",
+      "autoApprove": [],
       "disabled": false,
-      "autoApprove": []
+      "timeout": 60
     }
   }
 }
