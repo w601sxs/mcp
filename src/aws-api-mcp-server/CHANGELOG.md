@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Support for streamable HTTP transport mode via `AWS_API_MCP_TRANSPORT` environment variable
+- Configurable port for HTTP transport mode via `AWS_API_MCP_PORT` environment variable (defaults to 8000)
+
 ### Changed
 
 - Fetch embedding model from AWS instead of Hugging Face (#1127)
