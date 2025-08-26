@@ -295,40 +295,6 @@ wheels = [
 ]
 
 [[package]]
-name = "awslabs-amazon-qbusiness-anonymous-mcp-server"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "boto3-stubs", extra = ["qbusiness"] },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "mypy-boto3-qbusiness" },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ed/eb/f03e53165574f050a5a42af135cac7a91d939a7ea3cb2bf38d5c3e5d45dd/awslabs_amazon_qbusiness_anonymous_mcp_server-0.0.2.tar.gz", hash = "sha256:9418fa5e11fbd69a7622eac12ffb3ec6409495ae6a8ffdafac1a14a1142e0a46", size = 73280, upload-time = "2025-07-18T00:20:22.036Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/df/faaf2ff9c301e91e69856abcd9298f5fb555e7356d7969318cd4b2c0885f/awslabs_amazon_qbusiness_anonymous_mcp_server-0.0.2-py3-none-any.whl", hash = "sha256:f7bfd240befc6e8c109cf86441978bbdfb9a8cca471e62c6011e49431198ac8d", size = 13397, upload-time = "2025-07-18T00:20:20.751Z" },
-]
-
-[[package]]
-name = "awslabs-amazon-qindex-mcp-server"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/8a/d44321fd6e5cd5601b948bcb96ca64f03b99f9459879938d95efe57858c2/awslabs_amazon_qindex_mcp_server-0.0.2.tar.gz", hash = "sha256:da6758642628094ef9768664185d86e799106ee1e60b10596937d75235ad6592", size = 80742, upload-time = "2025-07-18T00:21:04.092Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fb/a8/6c2ed32faf1dc5f6ed60a6b7b436b6a1f8498e11d8ae6e8a7777d771100e/awslabs_amazon_qindex_mcp_server-0.0.2-py3-none-any.whl", hash = "sha256:f21dc8c3c3dbe4383e283972795e8d6b7e4b57d35328adf51cd72d7dcf0dcc09", size = 18323, upload-time = "2025-07-18T00:21:02.583Z" },
-]
-
-
-
-[[package]]
 name = "awslabs-amazon-sns-sqs-mcp-server"
 version = "2.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -387,21 +353,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/04/a8/5615230458b2fbcd9a312d62d587d172baf323806eaab19b34185cb6bbbd/awslabs_aws_api_mcp_server-0.2.2.tar.gz", hash = "sha256:228ebb4d444b96e1a601ce84e6a316aa5fee62460cf0391259a1a1ecd615c8d6", size = 65877451, upload-time = "2025-08-04T23:10:04.803Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/37/3a/56d10728ce5c62dd8dd811b6f4d1372892b28f2ea0c6fec843124658e8cd/awslabs_aws_api_mcp_server-0.2.2-py3-none-any.whl", hash = "sha256:f4fa83b90ca2a325bfcb4bf62ffeea5e52f08897e0f9b8359d65c604c32588c7", size = 65752606, upload-time = "2025-08-04T23:10:00.476Z" },
-]
-
-[[package]]
-name = "awslabs-aws-bedrock-data-automation-mcp-server"
-version = "0.0.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/db/616bfebf9009ba092a26390122a8b45d0eb6db954a40e393faa5677b79aa/awslabs_aws_bedrock_data_automation_mcp_server-0.0.5.tar.gz", hash = "sha256:5841fe6882af02a51494d2208eaf629d4a7027acce5d13e09b6fcd8b9216abc6", size = 78953, upload-time = "2025-07-18T00:14:52.605Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/58/22f765c30206d31d414b44bf56abc8cc4ccb28fa505d6077ccdac2d9d9fa/awslabs_aws_bedrock_data_automation_mcp_server-0.0.5-py3-none-any.whl", hash = "sha256:7ee9d44ed6d80abd564428c4b191c746a3b62b9e83a8ef003fa6e5401456e53a", size = 15490, upload-time = "2025-07-18T00:14:49.457Z" },
 ]
 
 [[package]]
@@ -471,21 +422,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/0d/c299ff1efb7e3a9214e8e7ede087eb09e765ed9ebb66ff783f18c26429a6/awslabs_aws_healthomics_mcp_server-0.0.3.tar.gz", hash = "sha256:e025948ba356d18217492112895dafa113fdf144adec0c8aa6ccae30aa690cc1", size = 120218, upload-time = "2025-07-18T00:14:56.989Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/19/42/049ba72b3c7f437a31cad694c7355b08778c332d7177ebe932923dc52ded/awslabs_aws_healthomics_mcp_server-0.0.3-py3-none-any.whl", hash = "sha256:29dd2ebcc68ac6be93beace119d4e51e62f8960e6066b7dba6fa26d304ea6c69", size = 43003, upload-time = "2025-07-18T00:14:54.39Z" },
-]
-
-[[package]]
-name = "awslabs-aws-location-mcp-server"
-version = "2.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/21/7e/0e58bb5276701243cdef756cee33f958d230021cc75e703b200c31893318/awslabs_aws_location_mcp_server-2.0.3.tar.gz", hash = "sha256:5cdbd6f7a9616e8b00d9843b59583d263b043eae77a32d211af262515c6ecab2", size = 85569, upload-time = "2025-07-18T00:30:40.434Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/6e/64f823fe49cb6657e3d5d84984a901b8b06cb5d1ec6d5812a2d88388e2d4/awslabs_aws_location_mcp_server-2.0.3-py3-none-any.whl", hash = "sha256:cd68322b27b2480d30264017e7ea91cf161b78c496901e1980d51be6b04170e3", size = 16744, upload-time = "2025-07-18T00:30:39.149Z" },
 ]
 
 [[package]]
@@ -561,21 +497,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/77/fd/d92ca26cd1a8edf8bea821d069b8ed8187c9408214c840759657e220a9eb/awslabs_aws_support_mcp_server-0.1.7.tar.gz", hash = "sha256:c57211644b8e3c6089144f1429187210f78ad72684b42768836d08dae2171a55", size = 40113, upload-time = "2025-07-21T17:22:36.21Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/50/90/3a02190915d158666e030ad01e1826065a81cadd8332ad19eeac3a840678/awslabs_aws_support_mcp_server-0.1.7-py3-none-any.whl", hash = "sha256:72250fc972bbddc4a892dda52550e3a2a66b9cd6b2f85fe14614a628b15fdfac", size = 29879, upload-time = "2025-07-21T17:22:35.109Z" },
-]
-
-[[package]]
-name = "awslabs-bedrock-kb-retrieval-mcp-server"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "loguru" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e7/6d/034c1542b923ed15a7e6f9664241e517fd6bacd5d0706f880969449b2efb/awslabs_bedrock_kb_retrieval_mcp_server-1.0.4.tar.gz", hash = "sha256:a9e131951be682bb3430be33688d257af063ffaa27412b89e51a66b351125303", size = 82628, upload-time = "2025-07-18T00:57:24.488Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/03/b3ffc2d7409ac44c64090d6102f5becb45496ef3f2ca558813915aa97ce0/awslabs_bedrock_kb_retrieval_mcp_server-1.0.4-py3-none-any.whl", hash = "sha256:e62d56a2fc2e7fc0c881557b503d4f091a06702e2bea7d08ce3eb320c6781fdb", size = 18858, upload-time = "2025-07-18T00:57:23.377Z" },
 ]
 
 [[package]]
@@ -713,22 +634,17 @@ dependencies = [
     { name = "awslabs-amazon-keyspaces-mcp-server" },
     { name = "awslabs-amazon-mq-mcp-server" },
     { name = "awslabs-amazon-neptune-mcp-server" },
-    { name = "awslabs-amazon-qbusiness-anonymous-mcp-server" },
-    { name = "awslabs-amazon-qindex-mcp-server" },
     { name = "awslabs-amazon-sns-sqs-mcp-server" },
     { name = "awslabs-aurora-dsql-mcp-server" },
     { name = "awslabs-aws-api-mcp-server" },
-    { name = "awslabs-aws-bedrock-data-automation-mcp-server" },
     { name = "awslabs-aws-dataprocessing-mcp-server" },
     { name = "awslabs-aws-diagram-mcp-server" },
     { name = "awslabs-aws-documentation-mcp-server" },
     { name = "awslabs-aws-healthomics-mcp-server" },
-    { name = "awslabs-aws-location-mcp-server" },
     { name = "awslabs-aws-msk-mcp-server" },
     { name = "awslabs-aws-pricing-mcp-server" },
     { name = "awslabs-aws-serverless-mcp-server" },
     { name = "awslabs-aws-support-mcp-server" },
-    { name = "awslabs-bedrock-kb-retrieval-mcp-server" },
     { name = "awslabs-billing-cost-management-mcp-server" },
     { name = "awslabs-cdk-mcp-server" },
     { name = "awslabs-cfn-mcp-server" },
@@ -786,22 +702,17 @@ requires-dist = [
     { name = "awslabs-amazon-keyspaces-mcp-server", specifier = ">=0.0.3" },
     { name = "awslabs-amazon-mq-mcp-server", specifier = ">=2.0.4" },
     { name = "awslabs-amazon-neptune-mcp-server", specifier = ">=1.0.2" },
-    { name = "awslabs-amazon-qbusiness-anonymous-mcp-server", specifier = ">=0.0.2" },
-    { name = "awslabs-amazon-qindex-mcp-server", specifier = ">=0.0.2" },
     { name = "awslabs-amazon-sns-sqs-mcp-server", specifier = ">=2.0.4" },
     { name = "awslabs-aurora-dsql-mcp-server", specifier = ">=1.0.3" },
     { name = "awslabs-aws-api-mcp-server", specifier = ">=0.2.2" },
-    { name = "awslabs-aws-bedrock-data-automation-mcp-server", specifier = ">=0.0.5" },
     { name = "awslabs-aws-dataprocessing-mcp-server", specifier = ">=0.1.7" },
     { name = "awslabs-aws-diagram-mcp-server", specifier = ">=1.0.5" },
     { name = "awslabs-aws-documentation-mcp-server", specifier = ">=1.1.2" },
     { name = "awslabs-aws-healthomics-mcp-server", specifier = ">=0.0.3" },
-    { name = "awslabs-aws-location-mcp-server", specifier = ">=2.0.3" },
     { name = "awslabs-aws-msk-mcp-server", specifier = ">=0.0.3" },
     { name = "awslabs-aws-pricing-mcp-server", specifier = ">=1.0.8" },
     { name = "awslabs-aws-serverless-mcp-server", specifier = ">=0.1.7" },
     { name = "awslabs-aws-support-mcp-server", specifier = ">=0.1.7" },
-    { name = "awslabs-bedrock-kb-retrieval-mcp-server", specifier = ">=1.0.4" },
     { name = "awslabs-billing-cost-management-mcp-server", specifier = ">=0.0.2" },
     { name = "awslabs-cdk-mcp-server", specifier = ">=1.0.4" },
     { name = "awslabs-cfn-mcp-server", specifier = ">=1.0.6" },

@@ -17,72 +17,10 @@ import loguru
 import os
 import pathlib
 import sys
-
-# Import all servers
-from awslabs.amazon_keyspaces_mcp_server.server import mcp as keyspaces_server
-from awslabs.amazon_mq_mcp_server.server import mcp as mq_server
-from awslabs.amazon_neptune_mcp_server.server import mcp as neptune_server
-from awslabs.amazon_qbusiness_anonymous_mcp_server.server import mcp as qbusiness_anonymous_server
-from awslabs.amazon_sns_sqs_mcp_server.server import mcp as sns_sqs_server
-from awslabs.aurora_dsql_mcp_server.server import mcp as aurora_dsql_server
-from awslabs.aws_api_mcp_server.server import server as aws_api_server
-from awslabs.aws_bedrock_data_automation_mcp_server.server import (
-    mcp as bedrock_data_automation_server,
-)
-from awslabs.aws_dataprocessing_mcp_server.server import mcp as dataprocessing_server
-from awslabs.aws_diagram_mcp_server.server import mcp as diagram_server
-from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
-from awslabs.aws_healthomics_mcp_server.server import mcp as healthomics_server
-from awslabs.aws_location_server.server import mcp as location_server
-from awslabs.aws_pricing_mcp_server.server import mcp as pricing_server
-from awslabs.aws_serverless_mcp_server.server import mcp as serverless_server
-from awslabs.aws_support_mcp_server.server import mcp as support_server
-from awslabs.bedrock_kb_retrieval_mcp_server.server import mcp as bedrock_kb_retrieval_server
-from awslabs.billing_cost_management_mcp_server.server import mcp as billing_cost_management_server
-
-# from awslabs.ccapi_mcp_server.server import mcp as ccapi_mcp_server
-from awslabs.cdk_mcp_server.core.server import mcp as cdk_server
-from awslabs.cfn_mcp_server.server import mcp as cfn_server
-from awslabs.cloudtrail_mcp_server.server import mcp as cloudtrail_server
-from awslabs.cloudwatch_appsignals_mcp_server.server import mcp as cloudwatch_appsignals_server
-from awslabs.cloudwatch_mcp_server.server import mcp as cloudwatch_server
-from awslabs.code_doc_gen_mcp_server.server import mcp as code_doc_gen_server
-from awslabs.cost_explorer_mcp_server.server import app as cost_explorer_server
-from awslabs.documentdb_mcp_server.server import mcp as documentdb_server
-from awslabs.dynamodb_mcp_server.server import app as dynamodb_server
-from awslabs.ecs_mcp_server.main import mcp as ecs_server
-from awslabs.eks_mcp_server.server import mcp as eks_server
-from awslabs.elasticache_mcp_server.main import mcp as elasticache_server
-from awslabs.finch_mcp_server.server import mcp as finch_server
-from awslabs.frontend_mcp_server.server import mcp as frontend_server
-from awslabs.git_repo_research_mcp_server.server import mcp as git_repo_research_server
-from awslabs.iam_mcp_server.server import mcp as iam_server
-from awslabs.lambda_tool_mcp_server.server import mcp as lambda_tool_server
-from awslabs.memcached_mcp_server.main import mcp as memcached_server
-from awslabs.mysql_mcp_server.server import mcp as mysql_server
-from awslabs.nova_canvas_mcp_server.server import mcp as nova_canvas_server
-from awslabs.postgres_mcp_server.server import mcp as postgres_server
-from awslabs.prometheus_mcp_server.server import mcp as prometheus_server
-from awslabs.redshift_mcp_server.server import mcp as redshift_server
-from awslabs.s3_tables_mcp_server.server import app as s3_tables_server
-from awslabs.stepfunctions_tool_mcp_server.server import mcp as stepfunctions_tool_server
-from awslabs.syntheticdata_mcp_server.server import mcp as syntheticdata_server
-from awslabs.timestream_for_influxdb_mcp_server.server import mcp as timestream_for_influxdb_server
-from awslabs.well_architected_security_mcp_server.server import (
-    mcp as well_architected_security_server,
-)
 from fastmcp import FastMCP
-
-# from awslabs.amazon_qindex_mcp_server.server import mcp as qindex_server --> need to modify server to fix logger.remove(0)
-# from awslabs.aws_msk_mcp_server.server import mcp as msk_server --> does not expose mcp server
-# from awslabs.openapi_mcp_server.server import mcp_server as openapi_server --> does not expose mcp server
-# from awslabs.terraform_mcp_server.server import mcp as terraform_server --> has dependency conflicts
-# from awslabs.valkey_mcp_server.server import mcp as valkey_server --> has dependency conflicts
 from fastmcp.server.proxy import ProxyClient
 from typing import List, TypedDict
 
-
-# - well-architected-security-mcp-server, - cloudtrail-mcp-server, - billing-cost-management-mcp-server
 
 current_dir = pathlib.Path(__file__).parent
 prompt_understanding_path = current_dir / 'static' / 'PROMPT_UNDERSTANDING.md'
@@ -188,17 +126,14 @@ async def setup():
     it will not import any servers.
 
     The function handles the following roles:
-    - AWS Knowledge Foundation
+    - AWS Foundation
     - Dev Tools
     - CI/CD DevOps
     - Container Orchestration
     - Serverless Architecture
     - Analytics Warehouse
     - Data Platform Engineering
-    - Data Ingestion
-    - AI Development
     - Frontend Development
-    - API Management
     - Solutions Architect
     - FinOps
     - Monitoring & Observability
@@ -208,21 +143,17 @@ async def setup():
     - NoSQL DB Specialist
     - Time Series DB Specialist
     - Messaging & Events
-    - Geospatial Services
     - Healthcare & Life Sciences
     """
     # roles - environment variables for role-based server configuration
-    aws_knowledge_foundation = os.environ.get('aws-knowledge-foundation')
+    aws_foundation = os.environ.get('aws-foundation')
     dev_tools = os.environ.get('dev-tools')
     ci_cd_devops = os.environ.get('ci-cd-devops')
     container_orchestration = os.environ.get('container-orchestration')
     serverless_architecture = os.environ.get('serverless-architecture')
     analytics_warehouse = os.environ.get('analytics-warehouse')
     data_platform_eng = os.environ.get('data-platform-eng')
-    data_ingestion = os.environ.get('data-ingestion')
-    ai_dev = os.environ.get('ai-dev')
     frontend_dev = os.environ.get('frontend-dev')
-    api_management = os.environ.get('api-management')
     solutions_architect = os.environ.get('solutions-architect')
     finops = os.environ.get('finops')
     monitoring_observability = os.environ.get('monitoring-observability')
@@ -232,13 +163,15 @@ async def setup():
     nosql_db_specialist = os.environ.get('nosql-db-specialist')
     timeseries_db_specialist = os.environ.get('timeseries-db-specialist')
     messaging_events = os.environ.get('messaging-events')
-    geospatial_services = os.environ.get('geospatial-services')
     healthcare_lifesci = os.environ.get('healthcare-lifesci')
     # Track which servers have been imported to avoid duplicates
     imported_servers = set()
 
     # AWS Knowledge Foundation
-    if aws_knowledge_foundation:
+    if aws_foundation:
+        from awslabs.aws_api_mcp_server.server import server as aws_api_server
+        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
+
         logger.info('Enabling AWS Knowledge Foundation servers')
         imported_servers = await call_import_server(
             aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
@@ -249,6 +182,10 @@ async def setup():
 
     # Dev Tools
     if dev_tools:
+        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
+        from awslabs.code_doc_gen_mcp_server.server import mcp as code_doc_gen_server
+        from awslabs.git_repo_research_mcp_server.server import mcp as git_repo_research_server
+
         logger.info('Enabling Dev Tools servers')
         imported_servers = await call_import_server(
             git_repo_research_server,
@@ -265,6 +202,9 @@ async def setup():
 
     # CI/CD DevOps
     if ci_cd_devops:
+        from awslabs.cdk_mcp_server.core.server import mcp as cdk_server
+        from awslabs.cfn_mcp_server.server import mcp as cfn_server
+
         logger.info('Enabling CI/CD DevOps servers')
         imported_servers = await call_import_server(
             cdk_server, 'cdk', 'cdk_server', imported_servers
@@ -279,6 +219,10 @@ async def setup():
 
     # Container Orchestration
     if container_orchestration:
+        from awslabs.ecs_mcp_server.main import mcp as ecs_server
+        from awslabs.eks_mcp_server.server import mcp as eks_server
+        from awslabs.finch_mcp_server.server import mcp as finch_server
+
         logger.info('Enabling Container Orchestration servers')
         imported_servers = await call_import_server(
             eks_server, 'eks', 'eks_server', imported_servers
@@ -292,6 +236,11 @@ async def setup():
 
     # Serverless Architecture
     if serverless_architecture:
+        from awslabs.amazon_sns_sqs_mcp_server.server import mcp as sns_sqs_server
+        from awslabs.aws_serverless_mcp_server.server import mcp as serverless_server
+        from awslabs.lambda_tool_mcp_server.server import mcp as lambda_tool_server
+        from awslabs.stepfunctions_tool_mcp_server.server import mcp as stepfunctions_tool_server
+
         logger.info('Enabling Serverless Architecture servers')
         imported_servers = await call_import_server(
             serverless_server, 'serverless', 'serverless_server', imported_servers
@@ -311,6 +260,13 @@ async def setup():
 
     # Analytics Warehouse
     if analytics_warehouse:
+        from awslabs.aws_dataprocessing_mcp_server.server import mcp as dataprocessing_server
+        from awslabs.redshift_mcp_server.server import mcp as redshift_server
+        from awslabs.syntheticdata_mcp_server.server import mcp as syntheticdata_server
+        from awslabs.timestream_for_influxdb_mcp_server.server import (
+            mcp as timestream_for_influxdb_server,
+        )
+
         logger.info('Enabling Analytics Warehouse servers')
         imported_servers = await call_import_server(
             redshift_server, 'redshift', 'redshift_server', imported_servers
@@ -331,6 +287,10 @@ async def setup():
 
     # Data Platform Engineering
     if data_platform_eng:
+        from awslabs.aws_dataprocessing_mcp_server.server import mcp as dataprocessing_server
+        from awslabs.dynamodb_mcp_server.server import app as dynamodb_server
+        from awslabs.s3_tables_mcp_server.server import app as s3_tables_server
+
         logger.info('Enabling Data Platform Engineering servers')
         imported_servers = await call_import_server(
             dynamodb_server, 'dynamodb', 'dynamodb_server', imported_servers
@@ -343,46 +303,11 @@ async def setup():
         )
         # msk_server is commented out in imports
 
-    # Data Ingestion
-    if data_ingestion:
-        logger.info('Enabling Data Ingestion servers')
-        imported_servers = await call_import_server(
-            sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
-        )
-        imported_servers = await call_import_server(mq_server, 'mq', 'mq_server', imported_servers)
-        # msk_server is commented out in imports
-        imported_servers = await call_import_server(
-            cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
-        )
-
-    # AI Development
-    if ai_dev:
-        logger.info('Enabling AI Development servers')
-        imported_servers = await call_import_server(
-            bedrock_kb_retrieval_server,
-            'bedrock_kb_retrieval',
-            'bedrock_kb_retrieval_server',
-            imported_servers,
-        )
-        imported_servers = await call_import_server(
-            nova_canvas_server, 'nova_canvas', 'nova_canvas_server', imported_servers
-        )
-        # qindex_server is commented out in imports
-        imported_servers = await call_import_server(
-            qbusiness_anonymous_server,
-            'qbusiness_anonymous',
-            'qbusiness_anonymous_server',
-            imported_servers,
-        )
-        imported_servers = await call_import_server(
-            bedrock_data_automation_server,
-            'bedrock_data_automation',
-            'bedrock_data_automation_server',
-            imported_servers,
-        )
-
     # Frontend Development
     if frontend_dev:
+        from awslabs.frontend_mcp_server.server import mcp as frontend_server
+        from awslabs.nova_canvas_mcp_server.server import mcp as nova_canvas_server
+
         logger.info('Enabling Frontend Development servers')
         imported_servers = await call_import_server(
             frontend_server, 'frontend', 'frontend_server', imported_servers
@@ -391,16 +316,14 @@ async def setup():
             nova_canvas_server, 'nova_canvas', 'nova_canvas_server', imported_servers
         )
 
-    # API Management
-    if api_management:
-        logger.info('Enabling API Management servers')
-        # openapi_server is commented out in imports
-        imported_servers = await call_import_server(
-            aws_api_server, 'aws_api', 'aws_api_server', imported_servers
-        )
-
     # Solutions Architect
     if solutions_architect:
+        from awslabs.aws_diagram_mcp_server.server import mcp as diagram_server
+        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
+        from awslabs.aws_pricing_mcp_server.server import mcp as pricing_server
+        from awslabs.cost_explorer_mcp_server.server import app as cost_explorer_server
+        from awslabs.syntheticdata_mcp_server.server import mcp as syntheticdata_server
+
         logger.info('Enabling Solutions Architect servers')
         imported_servers = await call_import_server(
             diagram_server, 'diagram', 'diagram_server', imported_servers
@@ -420,6 +343,13 @@ async def setup():
 
     # FinOps
     if finops:
+        from awslabs.aws_pricing_mcp_server.server import mcp as pricing_server
+        from awslabs.billing_cost_management_mcp_server.server import (
+            mcp as billing_cost_management_server,
+        )
+        from awslabs.cloudwatch_mcp_server.server import mcp as cloudwatch_server
+        from awslabs.cost_explorer_mcp_server.server import app as cost_explorer_server
+
         logger.info('Enabling FinOps servers')
         imported_servers = await call_import_server(
             cost_explorer_server, 'cost_explorer', 'cost_explorer_server', imported_servers
@@ -439,6 +369,13 @@ async def setup():
 
     # Monitoring & Observability
     if monitoring_observability:
+        from awslabs.cloudtrail_mcp_server.server import mcp as cloudtrail_server
+        from awslabs.cloudwatch_appsignals_mcp_server.server import (
+            mcp as cloudwatch_appsignals_server,
+        )
+        from awslabs.cloudwatch_mcp_server.server import mcp as cloudwatch_server
+        from awslabs.prometheus_mcp_server.server import mcp as prometheus_server
+
         logger.info('Enabling Monitoring & Observability servers')
         imported_servers = await call_import_server(
             cloudwatch_server, 'cloudwatch', 'cloudwatch_server', imported_servers
@@ -458,6 +395,9 @@ async def setup():
 
     # Caching & Performance
     if caching_performance:
+        from awslabs.elasticache_mcp_server.main import mcp as elasticache_server
+        from awslabs.memcached_mcp_server.main import mcp as memcached_server
+
         logger.info('Enabling Caching & Performance servers')
         imported_servers = await call_import_server(
             elasticache_server, 'elasticache', 'elasticache_server', imported_servers
@@ -469,6 +409,12 @@ async def setup():
 
     # Security & Identity
     if security_identity:
+        from awslabs.aws_support_mcp_server.server import mcp as support_server
+        from awslabs.iam_mcp_server.server import mcp as iam_server
+        from awslabs.well_architected_security_mcp_server.server import (
+            mcp as well_architected_security_server,
+        )
+
         logger.info('Enabling Security & Identity servers')
         imported_servers = await call_import_server(
             iam_server, 'iam', 'iam_server', imported_servers
@@ -485,6 +431,11 @@ async def setup():
 
     # SQL DB Specialist
     if sql_db_specialist:
+        from awslabs.aurora_dsql_mcp_server.server import mcp as aurora_dsql_server
+        from awslabs.mysql_mcp_server.server import mcp as mysql_server
+        from awslabs.postgres_mcp_server.server import mcp as postgres_server
+        from awslabs.redshift_mcp_server.server import mcp as redshift_server
+
         logger.info('Enabling SQL DB Specialist servers')
         imported_servers = await call_import_server(
             postgres_server, 'postgres', 'postgres_server', imported_servers
@@ -501,6 +452,11 @@ async def setup():
 
     # NoSQL DB Specialist
     if nosql_db_specialist:
+        from awslabs.amazon_keyspaces_mcp_server.server import mcp as keyspaces_server
+        from awslabs.amazon_neptune_mcp_server.server import mcp as neptune_server
+        from awslabs.documentdb_mcp_server.server import mcp as documentdb_server
+        from awslabs.dynamodb_mcp_server.server import app as dynamodb_server
+
         logger.info('Enabling NoSQL DB Specialist servers')
         imported_servers = await call_import_server(
             dynamodb_server, 'dynamodb', 'dynamodb_server', imported_servers
@@ -517,6 +473,12 @@ async def setup():
 
     # Time Series DB Specialist
     if timeseries_db_specialist:
+        from awslabs.cloudwatch_mcp_server.server import mcp as cloudwatch_server
+        from awslabs.prometheus_mcp_server.server import mcp as prometheus_server
+        from awslabs.timestream_for_influxdb_mcp_server.server import (
+            mcp as timestream_for_influxdb_server,
+        )
+
         logger.info('Enabling Time Series DB Specialist servers')
         imported_servers = await call_import_server(
             timestream_for_influxdb_server,
@@ -534,6 +496,9 @@ async def setup():
 
     # Messaging & Events
     if messaging_events:
+        from awslabs.amazon_mq_mcp_server.server import mcp as mq_server
+        from awslabs.amazon_sns_sqs_mcp_server.server import mcp as sns_sqs_server
+
         logger.info('Enabling Messaging & Events servers')
         imported_servers = await call_import_server(
             sns_sqs_server, 'sns_sqs', 'sns_sqs_server', imported_servers
@@ -541,18 +506,10 @@ async def setup():
         imported_servers = await call_import_server(mq_server, 'mq', 'mq_server', imported_servers)
         # msk_server is commented out in imports
 
-    # Geospatial Services
-    if geospatial_services:
-        logger.info('Enabling Geospatial Services servers')
-        imported_servers = await call_import_server(
-            location_server, 'location', 'location_server', imported_servers
-        )
-        imported_servers = await call_import_server(
-            neptune_server, 'neptune', 'neptune_server', imported_servers
-        )
-
     # Healthcare & Life Sciences
     if healthcare_lifesci:
+        from awslabs.aws_healthomics_mcp_server.server import mcp as healthomics_server
+
         logger.info('Enabling Healthcare & Life Sciences servers')
         imported_servers = await call_import_server(
             healthomics_server, 'healthomics', 'healthomics_server', imported_servers

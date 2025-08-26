@@ -387,27 +387,23 @@ Analysis:
 
 The Core MCP Server can dynamically import other MCP servers based on role-based environment variables. This allows for tailored server configurations based on specific use cases or roles:
 
-- **aws-knowledge-foundation**: AWS documentation and API servers
+- **aws-foundation**: AWS knowledge and API servers
 - **dev-tools**: Git repo research and code documentation tools
 - **ci-cd-devops**: CDK and CloudFormation servers
 - **container-orchestration**: EKS, ECS, and Finch servers
 - **serverless-architecture**: Serverless, Lambda, Step Functions, and SNS/SQS servers
 - **analytics-warehouse**: Redshift, Timestream, and data processing servers
 - **data-platform-eng**: DynamoDB, S3 Tables, and data processing servers
-- **data-ingestion**: SNS/SQS, MQ, and CloudWatch servers
-- **ai-dev**: Bedrock KB, Nova Canvas, Rekognition, and Q Business servers
 - **frontend-dev**: Frontend and Nova Canvas servers
-- **api-management**: OpenAPI and AWS API servers
 - **solutions-architect**: Diagram, pricing, cost explorer, and documentation servers
-- **finops**: Cost explorer, pricing, and CloudWatch servers
-- **monitoring-observability**: CloudWatch, AppSignals, and Prometheus servers
+- **finops**: Cost explorer, pricing, CloudWatch, and billing cost management servers
+- **monitoring-observability**: CloudWatch, CloudTrail, AppSignals, and Prometheus servers
 - **caching-performance**: ElastiCache, Valkey, and Memcached servers
-- **security-identity**: IAM and support servers
+- **security-identity**: IAM, support, and well architected security servers
 - **sql-db-specialist**: PostgreSQL, MySQL, Aurora DSQL, and Redshift servers
 - **nosql-db-specialist**: DynamoDB, DocumentDB, Keyspaces, and Neptune servers
 - **timeseries-db-specialist**: Timestream, Prometheus, and CloudWatch servers
 - **messaging-events**: SNS/SQS and MQ servers
-- **geospatial-services**: Location and Neptune servers
 - **healthcare-lifesci**: HealthOmics server
 
 ## 6. Tool Usage Strategy

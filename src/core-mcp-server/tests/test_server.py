@@ -31,25 +31,19 @@ with open(prompt_understanding_path, 'r', encoding='utf-8') as f:
     PROMPT_UNDERSTANDING = f.read()
 
 mock_modules = {
-    'awslabs.amazon_keyspaces_mcp_server': MagicMock(),
     'awslabs.amazon_keyspaces_mcp_server.server': MagicMock(),
-    'awslabs.amazon_mq_mcp_server': MagicMock(),
     'awslabs.amazon_mq_mcp_server.server': MagicMock(),
     'awslabs.amazon_neptune_mcp_server.server': MagicMock(),
-    'awslabs.amazon_qbusiness_anonymous_mcp_server.server': MagicMock(),
     'awslabs.amazon_sns_sqs_mcp_server.server': MagicMock(),
     'awslabs.aurora_dsql_mcp_server.server': MagicMock(),
     'awslabs.aws_api_mcp_server.server': MagicMock(),
-    'awslabs.aws_bedrock_data_automation_mcp_server.server': MagicMock(),
     'awslabs.aws_dataprocessing_mcp_server.server': MagicMock(),
     'awslabs.aws_diagram_mcp_server.server': MagicMock(),
     'awslabs.aws_documentation_mcp_server.server_aws': MagicMock(),
     'awslabs.aws_healthomics_mcp_server.server': MagicMock(),
-    'awslabs.aws_location_server.server': MagicMock(),
     'awslabs.aws_pricing_mcp_server.server': MagicMock(),
     'awslabs.aws_serverless_mcp_server.server': MagicMock(),
     'awslabs.aws_support_mcp_server.server': MagicMock(),
-    'awslabs.bedrock_kb_retrieval_mcp_server.server': MagicMock(),
     'awslabs.cdk_mcp_server.core.server': MagicMock(),
     'awslabs.cfn_mcp_server.server': MagicMock(),
     'awslabs.cloudwatch_appsignals_mcp_server.server': MagicMock(),
@@ -161,7 +155,7 @@ class TestSetup:
     @pytest.mark.parametrize(
         'role_env_var,expected_prefixes',
         [
-            ('aws-knowledge-foundation', ['aws_docs', 'aws_api']),
+            ('aws-foundation', ['aws_docs', 'aws_api']),
             ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_docs']),
             ('ci-cd-devops', ['cdk', 'cfn']),
             ('container-orchestration', ['eks', 'ecs', 'finch']),
@@ -174,18 +168,7 @@ class TestSetup:
                 ['redshift', 'timestream_for_influxdb', 'dataprocessing', 'syntheticdata'],
             ),
             ('data-platform-eng', ['dynamodb', 's3_tables', 'dataprocessing']),
-            ('data-ingestion', ['sns_sqs', 'mq', 'cloudwatch']),
-            (
-                'ai-dev',
-                [
-                    'bedrock_kb_retrieval',
-                    'nova_canvas',
-                    'qbusiness_anonymous',
-                    'bedrock_data_automation',
-                ],
-            ),
             ('frontend-dev', ['frontend', 'nova_canvas']),
-            ('api-management', ['aws_api']),
             (
                 'solutions-architect',
                 ['diagram', 'pricing', 'cost_explorer', 'syntheticdata', 'aws_docs'],
@@ -201,7 +184,6 @@ class TestSetup:
             ('nosql-db-specialist', ['dynamodb', 'documentdb', 'keyspaces', 'neptune']),
             ('timeseries-db-specialist', ['timestream_for_influxdb', 'prometheus', 'cloudwatch']),
             ('messaging-events', ['sns_sqs', 'mq']),
-            ('geospatial-services', ['location', 'neptune']),
             ('healthcare-lifesci', ['healthomics']),
         ],
     )
@@ -240,9 +222,9 @@ class TestSetup:
             assert prefix in called
 
     @pytest.mark.asyncio
-    @patch.dict('os.environ', {'aws-knowledge-foundation': 'true'})
-    async def test_setup_aws_knowledge_foundation(self):
-        """Test setup function with aws-knowledge-foundation role enabled."""
+    @patch.dict('os.environ', {'aws-foundation': 'true'})
+    async def test_setup_aws_foundation(self):
+        """Test setup function with aws-foundation role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
@@ -409,81 +391,9 @@ class TestSetup:
                 assert True
 
     @pytest.mark.asyncio
-    @patch.dict('os.environ', {'data-ingestion': 'true'})
-    async def test_setup_data_ingestion(self):
-        """Test setup function with data-ingestion role enabled."""
-        # Import the setup function
-        with patch.dict('sys.modules', mock_modules):
-            from awslabs.core_mcp_server.server import setup
-
-            # Mock the necessary components
-            with (
-                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
-                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
-            ):
-                # Configure mocks
-                mock_proxy = MagicMock()
-                mock_as_proxy.return_value = mock_proxy
-                mock_import_server.return_value = None
-
-                # Call the setup function
-                await setup()
-
-                # Verify that the function completed without errors
-                assert True
-
-    @pytest.mark.asyncio
-    @patch.dict('os.environ', {'ai-dev': 'true'})
-    async def test_setup_ai_dev(self):
-        """Test setup function with ai-dev role enabled."""
-        # Import the setup function
-        with patch.dict('sys.modules', mock_modules):
-            from awslabs.core_mcp_server.server import setup
-
-            # Mock the necessary components
-            with (
-                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
-                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
-            ):
-                # Configure mocks
-                mock_proxy = MagicMock()
-                mock_as_proxy.return_value = mock_proxy
-                mock_import_server.return_value = None
-
-                # Call the setup function
-                await setup()
-
-                # Verify that the function completed without errors
-                assert True
-
-    @pytest.mark.asyncio
     @patch.dict('os.environ', {'frontend-dev': 'true'})
     async def test_setup_frontend_dev(self):
         """Test setup function with frontend-dev role enabled."""
-        # Import the setup function
-        with patch.dict('sys.modules', mock_modules):
-            from awslabs.core_mcp_server.server import setup
-
-            # Mock the necessary components
-            with (
-                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
-                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
-            ):
-                # Configure mocks
-                mock_proxy = MagicMock()
-                mock_as_proxy.return_value = mock_proxy
-                mock_import_server.return_value = None
-
-                # Call the setup function
-                await setup()
-
-                # Verify that the function completed without errors
-                assert True
-
-    @pytest.mark.asyncio
-    @patch.dict('os.environ', {'api-management': 'true'})
-    async def test_setup_api_management(self):
-        """Test setup function with api-management role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
@@ -701,30 +611,6 @@ class TestSetup:
     @patch.dict('os.environ', {'messaging-events': 'true'})
     async def test_setup_messaging_events(self):
         """Test setup function with messaging-events role enabled."""
-        # Import the setup function
-        with patch.dict('sys.modules', mock_modules):
-            from awslabs.core_mcp_server.server import setup
-
-            # Mock the necessary components
-            with (
-                patch('awslabs.core_mcp_server.server.FastMCP.as_proxy') as mock_as_proxy,
-                patch('awslabs.core_mcp_server.server.mcp.import_server') as mock_import_server,
-            ):
-                # Configure mocks
-                mock_proxy = MagicMock()
-                mock_as_proxy.return_value = mock_proxy
-                mock_import_server.return_value = None
-
-                # Call the setup function
-                await setup()
-
-                # Verify that the function completed without errors
-                assert True
-
-    @pytest.mark.asyncio
-    @patch.dict('os.environ', {'geospatial-services': 'true'})
-    async def test_setup_geospatial_services(self):
-        """Test setup function with geospatial-services role enabled."""
         # Import the setup function
         with patch.dict('sys.modules', mock_modules):
             from awslabs.core_mcp_server.server import setup
