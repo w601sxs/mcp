@@ -16,6 +16,7 @@ import boto3
 import os
 import tempfile
 from pathlib import Path
+from typing import Literal, cast
 
 
 TRUTHY_VALUES = frozenset(['true', 'yes', '1'])
@@ -54,12 +55,12 @@ def get_env_bool(env_key: str, default: bool) -> bool:
     return os.getenv(env_key, str(default)).casefold() in TRUTHY_VALUES
 
 
-def get_transport_from_env() -> str:
+def get_transport_from_env() -> Literal['stdio', 'streamable-http']:
     """Get a transport value from an environment variable, with a default."""
     transport = os.getenv('AWS_API_MCP_TRANSPORT', 'stdio')
     if transport not in ['stdio', 'streamable-http']:
         raise ValueError(f'Invalid transport: {transport}')
-    return transport
+    return cast(Literal['stdio', 'streamable-http'], transport)
 
 
 FASTMCP_LOG_LEVEL = os.getenv('FASTMCP_LOG_LEVEL', 'INFO')
