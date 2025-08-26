@@ -18,15 +18,15 @@ You can enable specific roles by setting environment variables. Each role corres
 
 | Role Environment Variable | Description | Included MCP Servers |
 |---------------------------|-------------|----------------------|
-| `aws-foundation` | AWS knowledge and API servers | aws-documentation-server, aws-api-server |
-| `dev-tools` | Development tools | git-repo-research-server, code-doc-gen-server, aws-documentation-server |
+| `aws-foundation` | AWS knowledge and API servers | aws-knowledge-server, aws-api-server |
+| `dev-tools` | Development tools | git-repo-research-server, code-doc-gen-server, aws-knowledge-server |
 | `ci-cd-devops` | CI/CD and DevOps | cdk-server, cfn-server |
 | `container-orchestration` | Container management | eks-server, ecs-server, finch-server |
 | `serverless-architecture` | Serverless development | serverless-server, lambda-tool-server, stepfunctions-tool-server, sns-sqs-server |
 | `analytics-warehouse` | Data analytics and warehousing | redshift-server, timestream-for-influxdb-server, dataprocessing-server, syntheticdata-server |
 | `data-platform-eng` | Data platform engineering | dynamodb-server, s3-tables-server, dataprocessing-server |
 | `frontend-dev` | Frontend development | frontend-server, nova-canvas-server |
-| `solutions-architect` | Solution architecture | diagram-server, pricing-server, cost-explorer-server, syntheticdata-server, aws-documentation-server |
+| `solutions-architect` | Solution architecture | diagram-server, pricing-server, cost-explorer-server, syntheticdata-server, aws-knowledge-server |
 | `finops` | Financial operations | cost-explorer-server, pricing-server, cloudwatch-server, billing-cost-management-server |
 | `monitoring-observability` | Monitoring and observability | cloudwatch-server, cloudwatch-appsignals-server, prometheus-server, cloudtrail-server |
 | `caching-performance` | Caching and performance | elasticache-server, memcached-server |

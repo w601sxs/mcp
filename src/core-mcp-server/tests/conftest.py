@@ -95,7 +95,6 @@ mock_modules = {
     'awslabs.aws_api_mcp_server.server': MagicMock(server=MagicMock()),
     'awslabs.aws_dataprocessing_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.aws_diagram_mcp_server.server': MagicMock(mcp=MagicMock()),
-    'awslabs.aws_documentation_mcp_server.server_aws': MagicMock(mcp=MagicMock()),
     'awslabs.aws_healthomics_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.aws_pricing_mcp_server.server': MagicMock(mcp=MagicMock()),
     'awslabs.aws_serverless_mcp_server.server': MagicMock(mcp=MagicMock()),

@@ -395,7 +395,7 @@ The Core MCP Server can dynamically import other MCP servers based on role-based
 - **analytics-warehouse**: Redshift, Timestream, and data processing servers
 - **data-platform-eng**: DynamoDB, S3 Tables, and data processing servers
 - **frontend-dev**: Frontend and Nova Canvas servers
-- **solutions-architect**: Diagram, pricing, cost explorer, and documentation servers
+- **solutions-architect**: Diagram, pricing, cost explorer, and AWS knowledge servers
 - **finops**: Cost explorer, pricing, CloudWatch, and billing cost management servers
 - **monitoring-observability**: CloudWatch, CloudTrail, AppSignals, and Prometheus servers
 - **caching-performance**: ElastiCache, Valkey, and Memcached servers

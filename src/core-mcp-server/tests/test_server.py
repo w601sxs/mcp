@@ -39,7 +39,6 @@ mock_modules = {
     'awslabs.aws_api_mcp_server.server': MagicMock(),
     'awslabs.aws_dataprocessing_mcp_server.server': MagicMock(),
     'awslabs.aws_diagram_mcp_server.server': MagicMock(),
-    'awslabs.aws_documentation_mcp_server.server_aws': MagicMock(),
     'awslabs.aws_healthomics_mcp_server.server': MagicMock(),
     'awslabs.aws_pricing_mcp_server.server': MagicMock(),
     'awslabs.aws_serverless_mcp_server.server': MagicMock(),
@@ -155,8 +154,8 @@ class TestSetup:
     @pytest.mark.parametrize(
         'role_env_var,expected_prefixes',
         [
-            ('aws-foundation', ['aws_docs', 'aws_api']),
-            ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_docs']),
+            ('aws-foundation', ['aws_knowledge', 'aws_api']),
+            ('dev-tools', ['git_repo_research', 'code_doc_gen', 'aws_knowledge']),
             ('ci-cd-devops', ['cdk', 'cfn']),
             ('container-orchestration', ['eks', 'ecs', 'finch']),
             (
@@ -171,7 +170,7 @@ class TestSetup:
             ('frontend-dev', ['frontend', 'nova_canvas']),
             (
                 'solutions-architect',
-                ['diagram', 'pricing', 'cost_explorer', 'syntheticdata', 'aws_docs'],
+                ['diagram', 'pricing', 'cost_explorer', 'syntheticdata', 'aws_knowledge'],
             ),
             ('finops', ['cost_explorer', 'pricing', 'cloudwatch', 'billing_cost_management']),
             (

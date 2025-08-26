@@ -170,11 +170,25 @@ async def setup():
     # AWS Knowledge Foundation
     if aws_foundation:
         from awslabs.aws_api_mcp_server.server import server as aws_api_server
-        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
+
+        # AWS Knowledge MCP Server remote config
+        config = {
+            'mcpServers': {
+                'aws-knowledge-mcp-server': {
+                    'command': 'uvx',
+                    'args': [
+                        'mcp-proxy',
+                        '--transport',
+                        'streamablehttp',
+                        'https://knowledge-mcp.global.api.aws',
+                    ],
+                }
+            }
+        }
 
         logger.info('Enabling AWS Knowledge Foundation servers')
         imported_servers = await call_import_server(
-            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+            config, 'aws_knowledge', 'aws_knowledge_server', imported_servers
         )
         imported_servers = await call_import_server(
             aws_api_server, 'aws_api', 'aws_api_server', imported_servers
@@ -182,9 +196,23 @@ async def setup():
 
     # Dev Tools
     if dev_tools:
-        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
         from awslabs.code_doc_gen_mcp_server.server import mcp as code_doc_gen_server
         from awslabs.git_repo_research_mcp_server.server import mcp as git_repo_research_server
+
+        # AWS Knowledge MCP Server remote config
+        config = {
+            'mcpServers': {
+                'aws-knowledge-mcp-server': {
+                    'command': 'uvx',
+                    'args': [
+                        'mcp-proxy',
+                        '--transport',
+                        'streamablehttp',
+                        'https://knowledge-mcp.global.api.aws',
+                    ],
+                }
+            }
+        }
 
         logger.info('Enabling Dev Tools servers')
         imported_servers = await call_import_server(
@@ -197,7 +225,7 @@ async def setup():
             code_doc_gen_server, 'code_doc_gen', 'code_doc_gen_server', imported_servers
         )
         imported_servers = await call_import_server(
-            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+            config, 'aws_knowledge', 'aws_knowledge_server', imported_servers
         )
 
     # CI/CD DevOps
@@ -319,10 +347,24 @@ async def setup():
     # Solutions Architect
     if solutions_architect:
         from awslabs.aws_diagram_mcp_server.server import mcp as diagram_server
-        from awslabs.aws_documentation_mcp_server.server_aws import mcp as aws_documentation_server
         from awslabs.aws_pricing_mcp_server.server import mcp as pricing_server
         from awslabs.cost_explorer_mcp_server.server import app as cost_explorer_server
         from awslabs.syntheticdata_mcp_server.server import mcp as syntheticdata_server
+
+        # AWS Knowledge MCP Server remote config
+        config = {
+            'mcpServers': {
+                'aws-knowledge-mcp-server': {
+                    'command': 'uvx',
+                    'args': [
+                        'mcp-proxy',
+                        '--transport',
+                        'streamablehttp',
+                        'https://knowledge-mcp.global.api.aws',
+                    ],
+                }
+            }
+        }
 
         logger.info('Enabling Solutions Architect servers')
         imported_servers = await call_import_server(
@@ -338,7 +380,7 @@ async def setup():
             syntheticdata_server, 'syntheticdata', 'syntheticdata_server', imported_servers
         )
         imported_servers = await call_import_server(
-            aws_documentation_server, 'aws_docs', 'aws_documentation_server', imported_servers
+            config, 'aws_knowledge', 'aws_knowledge_server', imported_servers
         )
 
     # FinOps
