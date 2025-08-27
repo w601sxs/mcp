@@ -560,9 +560,9 @@ Example:
 ```python
 get_oauth_access_token(
     method="manual_curl",
-    client_id="2dduo4fc6auakn74anu89omqjk",
-    client_secret="hgdtv526jmscvn4mb0j3vur8eje672k5mch4t3su4khq3jv5g31",
-    token_endpoint="https://agentcore-cf32b91a.auth.us-east-1.amazoncognito.com/oauth2/token", 
+    client_id="<random-client-id>",
+    client_secret="<long-random-client-secret-asdasdaasfasfasf>",
+    token_endpoint="https://agentcore-<id>.auth.us-east-1.amazoncognito.com/oauth2/token", 
     scope="clean-dynamodb-gateway/invoke"
 )
 ```
