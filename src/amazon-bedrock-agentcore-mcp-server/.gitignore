@@ -162,7 +162,7 @@ $RECYCLE.BIN/
 *.orig
 
 # UV specific
-uv.lock
+# uv.lock
 
 # MCP specific
 .mcp/
