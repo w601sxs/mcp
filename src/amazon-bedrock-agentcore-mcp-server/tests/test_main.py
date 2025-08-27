@@ -174,7 +174,8 @@ class TestErrorHandlingIntegration:
             mock_client.side_effect = Exception("No credentials")
             
             result_tuple = await mcp.call_tool("deploy_agentcore_app", {
-                "agent_file": "test.py"
+                "agent_file": "test.py",
+                "execution_mode": "sdk"
             })
             result = extract_result(result_tuple)
             

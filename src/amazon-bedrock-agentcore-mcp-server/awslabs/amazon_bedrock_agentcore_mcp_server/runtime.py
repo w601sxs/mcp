@@ -486,8 +486,8 @@ def register_deployment_tools(mcp: FastMCP):
     
     @mcp.tool()
     async def deploy_agentcore_app(
-        app_file: str = Field(description="AgentCore app file to deploy"),
-        agent_name: str = Field(description="Name for your deployed agent"),
+        agent_file: str = Field(description="AgentCore app file to deploy"),
+        agent_name: str = Field(default="", description="Name for your deployed agent (auto-generated if empty)"),
         execution_mode: str = Field(default="ask", description="How to deploy", enum=["ask", "cli", "sdk"]),
         region: str = Field(default="us-east-1", description="AWS region"),
         memory_enabled: bool = Field(default=False, description="Create and configure memory (optional)"),
@@ -499,21 +499,38 @@ def register_deployment_tools(mcp: FastMCP):
         """Step 3: Deploy your AgentCore app - minimal deployment, choose CLI commands or SDK execution."""
         
         try:
+            # Validate agent_file parameter
+            if not agent_file or agent_file.strip() == "":
+                return f"""X Agent File Required
+                
+Missing Parameter: `agent_file` cannot be empty
+Expected: Path to your AgentCore application file
+
+Examples:
+- agent_file="my_agent.py"
+- agent_file="examples/chat_agent.py"
+- agent_file="/full/path/to/agent.py"
+
+Available actions:
+- Use `project_discover` to find agent files
+- Use `analyze_agent_code` to check existing code
+"""
+            
             # Use improved path resolution
-            resolved_app_file = resolve_app_file_path(app_file)
+            resolved_app_file = resolve_app_file_path(agent_file)
             
             if not resolved_app_file:
                 user_dir = get_user_working_directory()
-                available_files = list(user_dir.glob("/*.py"))[:10]
+                available_files = list(user_dir.glob("*.py"))[:10]
                 
-                return f"""X App file not found
+                return f"""X Agent file not found
                 
-Looking for: `{app_file}`
+Looking for: `{agent_file}`
 User working directory: `{user_dir}`
 Searched locations:
-- {app_file} (as provided)
-- {user_dir}/{app_file}
-- {user_dir}/examples/{Path(app_file).name}
+- {agent_file} (as provided)
+- {user_dir}/{agent_file}
+- {user_dir}/examples/{Path(agent_file).name}
 
 Available Python files:
 {chr(10).join(f"- {f.relative_to(user_dir)}" for f in available_files) if available_files else "- No Python files found"}
@@ -522,6 +539,10 @@ Please ensure the file exists or provide the correct path.
 """
             
             app_file = resolved_app_file
+            
+            # Auto-generate agent_name if not provided
+            if not agent_name or agent_name.strip() == "":
+                agent_name = Path(agent_file).stem.replace('_', '-').replace(' ', '-')
             
             # Handle execution mode choice
             if execution_mode == "ask":

@@ -212,7 +212,8 @@ class TestSDKAvailability:
     @pytest.mark.asyncio
     async def test_tools_handle_missing_sdk(self):
         """Test tools provide helpful error messages when SDK is missing"""
-        with patch('awslabs.amazon_bedrock_agentcore_mcp_server.utils.SDK_AVAILABLE', False):
+        with patch('awslabs.amazon_bedrock_agentcore_mcp_server.utils.SDK_AVAILABLE', False), \
+             patch('awslabs.amazon_bedrock_agentcore_mcp_server.runtime.SDK_AVAILABLE', False):
             # Import the tool functions to test with patched SDK_AVAILABLE
             from awslabs.amazon_bedrock_agentcore_mcp_server.runtime import register_deployment_tools
             from mcp.server.fastmcp import FastMCP
@@ -221,7 +222,8 @@ class TestSDKAvailability:
             register_deployment_tools(test_mcp)
             
             result_tuple = await test_mcp.call_tool("deploy_agentcore_app", {
-                "agent_file": "test.py"
+                "agent_file": "test.py",
+                "execution_mode": "sdk"
             })
             result = extract_result(result_tuple)
             

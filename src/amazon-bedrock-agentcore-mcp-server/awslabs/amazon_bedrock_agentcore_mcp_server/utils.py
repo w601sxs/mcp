@@ -1187,7 +1187,7 @@ Fallback: Try local analysis only:
 AWS Setup: `aws configure` or check credentials
 """
 
-def project_discover(action: str = "agents", search_path: str = ".") -> str:
+def _project_discover_impl(action: str = "agents", search_path: str = ".") -> str:
     """
     Search: CONSOLIDATED PROJECT DISCOVERY
     
@@ -1205,7 +1205,7 @@ def project_discover(action: str = "agents", search_path: str = ".") -> str:
         
         if action == "agents":
             ## Find potential agent files
-            agent_patterns = ["**/*agent*.py", "/agent.py", "/main.py", "**/*strands*.py", "**/*langchain*.py"]
+            agent_patterns = ["**/*agent*.py", "agent.py", "main.py", "**/*strands*.py", "**/*langchain*.py", "**/*langgraph*.py", "**/*crew*.py"]
             agent_files = []
             
             for pattern in agent_patterns:
@@ -1451,9 +1451,9 @@ Found: {len(memories)} memory resources
         
         elif action == "all":
             ## Complete project scan
-            agents_result = project_discover(action="agents", search_path=str(search_path))
-            configs_result = project_discover(action="configs", search_path=str(search_path))
-            memories_result = project_discover(action="memories", search_path=str(search_path))
+            agents_result = _project_discover_impl(action="agents", search_path=str(search_path))
+            configs_result = _project_discover_impl(action="configs", search_path=str(search_path))
+            memories_result = _project_discover_impl(action="memories", search_path=str(search_path))
             
             return f"""## Search: Complete Project Discovery
 
@@ -1661,7 +1661,7 @@ This could indicate:
             return f"Agent Logs Error: {str(e)}"
         
     @mcp.tool()
-    async def invokable_agents(
+    async def what_agents_can_i_invoke(
         region: str = "us-east-1"
     ) -> str:
         """
@@ -1697,7 +1697,7 @@ This could indicate:
         - project_discover()  ## Find agents
         - project_discover(action="all")  ## Complete scan
         """
-        return project_discover(action, search_path)
+        return _project_discover_impl(action, search_path)
 
 ## ============================================================================
 ## GITHUB EXAMPLES DISCOVERY (DYNAMIC)
