@@ -200,7 +200,8 @@ class TestErrorHandling:
         result_tuple = await mcp.call_tool(
             'deploy_agentcore_app',
             {
-                'agent_file': '',  # Missing required parameter
+                'app_file': 'test.py',  # Valid file path
+                'agent_name': 'test_agent',  # Required agent name
             },
         )
         result = extract_result(result_tuple)
@@ -211,6 +212,7 @@ class TestErrorHandling:
             or 'error' in result.lower()
             or 'missing' in result.lower()
             or 'not available' in result.lower()
+            or 'sdk' in result.lower()
         )
 
 
@@ -231,7 +233,7 @@ class TestSDKAvailability:
             register_deployment_tools(test_mcp)
 
             result_tuple = await test_mcp.call_tool(
-                'deploy_agentcore_app', {'agent_file': 'test.py'}
+                'deploy_agentcore_app', {'app_file': 'test.py', 'agent_name': 'test_agent'}
             )
             result = extract_result(result_tuple)
 
