@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Constants for Amazon Bedrock Agent Core MCP Server"""
+
+"""Constants for Amazon Bedrock Agent Core MCP Server."""
 
 # Server information
 SERVER_NAME = 'amazon-bedrock-agentcore-mcp-server'
@@ -64,18 +65,18 @@ AGENTCORE_CONFIG_DIR = '.agentcore_gateways'
 RUNTIME_CONFIG_SUFFIX = '_runtime.json'
 
 # Common error messages
-ERROR_NO_CREDENTIALS = "AWS credentials not found. Please configure your AWS credentials."
-ERROR_INVALID_REGION = "Invalid AWS region specified."
-ERROR_CLIENT_INIT = "Failed to initialize AWS client."
-ERROR_SDK_NOT_AVAILABLE = "AgentCore SDK not available. Install: uv add bedrock-agentcore bedrock-agentcore-starter-toolkit"
-ERROR_FILE_NOT_FOUND = "File not found. Please check the file path."
-ERROR_AGENT_NOT_FOUND = "Agent not found in deployment."
+ERROR_NO_CREDENTIALS = 'AWS credentials not found. Please configure your AWS credentials.'
+ERROR_INVALID_REGION = 'Invalid AWS region specified.'
+ERROR_CLIENT_INIT = 'Failed to initialize AWS client.'
+ERROR_SDK_NOT_AVAILABLE = 'AgentCore SDK not available. Install: uv add bedrock-agentcore bedrock-agentcore-starter-toolkit'
+ERROR_FILE_NOT_FOUND = 'File not found. Please check the file path.'
+ERROR_AGENT_NOT_FOUND = 'Agent not found in deployment.'
 
 # Success messages
-SUCCESS_DEPLOYMENT = "Agent deployed successfully"
-SUCCESS_OAUTH_CONFIG = "OAuth configuration completed"
-SUCCESS_MEMORY_CREATED = "Memory resource created successfully"
-SUCCESS_GATEWAY_CREATED = "Gateway created successfully"
+SUCCESS_DEPLOYMENT = 'Agent deployed successfully'
+SUCCESS_OAUTH_CONFIG = 'OAuth configuration completed'
+SUCCESS_MEMORY_CREATED = 'Memory resource created successfully'
+SUCCESS_GATEWAY_CREATED = 'Gateway created successfully'
 
 # Status indicators
 STATUS_ACTIVE = 'ACTIVE'

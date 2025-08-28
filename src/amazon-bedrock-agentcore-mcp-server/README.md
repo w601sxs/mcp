@@ -45,7 +45,7 @@ This MCP server provides **15 comprehensive tools** organized into functional ca
 > ```bash
 > # For published version:
 > npx @modelcontextprotocol/inspector uvx awslabs.amazon-bedrock-agentcore-mcp-server
-> 
+>
 > # For local development:
 > npx @modelcontextprotocol/inspector uv run python -m awslabs.amazon_bedrock_agentcore_mcp_server.server
 > ```
@@ -299,14 +299,14 @@ The test suite consists of **69 comprehensive tests** covering all aspects of th
 
 #### 🔧 **Core Functionality Tests** (`test_basic.py` - 12 tests)
 - Server initialization and tool registration verification
-- All **15 MCP tools** operational testing  
+- All **15 MCP tools** operational testing
 - OAuth authentication and token management
 - Code analysis and framework detection
 - Project discovery and GitHub integration
 - Gateway, credential, and memory operations
 - Error handling for invalid parameters and missing files
 
-#### 📦 **Package Structure Tests** (`test_init.py` - 11 tests)  
+#### 📦 **Package Structure Tests** (`test_init.py` - 11 tests)
 - Package version and import validation
 - Module structure compliance with MCP guidelines
 - Constants and Pydantic models availability
@@ -316,7 +316,7 @@ The test suite consists of **69 comprehensive tests** covering all aspects of th
 #### 🔗 **Integration Tests** (`test_main.py` - 11 tests)
 - End-to-end server lifecycle testing
 - All tools callable verification with real parameters
-- OAuth and deployment workflow integration  
+- OAuth and deployment workflow integration
 - Discovery tools and GitHub API integration
 - Comprehensive error handling scenarios
 - AWS credential and region validation
@@ -352,7 +352,7 @@ The test suite consists of **69 comprehensive tests** covering all aspects of th
 
 #### ✅ **Comprehensive Coverage:**
 - All **15 MCP tools** functionality and error handling
-- Modular architecture and proper module separation  
+- Modular architecture and proper module separation
 - MCP protocol compliance and message formatting
 - Pydantic model validation and serialization
 - Environment detection and configuration management
@@ -360,7 +360,7 @@ The test suite consists of **69 comprehensive tests** covering all aspects of th
 
 #### ⚠️ **Integration Testing Limitations:**
 - **AWS API calls are mocked** - tests don't deploy real AWS resources
-- **OAuth flows are simulated** - no actual Cognito integration testing  
+- **OAuth flows are simulated** - no actual Cognito integration testing
 - **GitHub API calls may fail** - network-dependent tests handle failures gracefully
 - **AgentCore SDK installation** - tests handle SDK unavailability scenarios
 
@@ -368,7 +368,7 @@ The test suite consists of **69 comprehensive tests** covering all aspects of th
 
 Tests are designed for CI/CD environments and include:
 - Deterministic results with proper mocking
-- Isolated test execution with no side effects  
+- Isolated test execution with no side effects
 - Comprehensive error path validation
 - Performance benchmarks under 10 seconds total runtime
 
