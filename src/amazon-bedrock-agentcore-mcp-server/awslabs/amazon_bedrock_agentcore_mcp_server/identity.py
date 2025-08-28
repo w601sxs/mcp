@@ -1,6 +1,19 @@
-#!/usr/bin/env python3
-"""
-AgentCore MCP Server - Identity Management Module
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""AgentCore MCP Server - Identity Management Module.
+
 Contains API key credential provider creation, management, and runtime utilities.
 
 MCP TOOLS IMPLEMENTED:
@@ -9,43 +22,40 @@ MCP TOOLS IMPLEMENTED:
 • get_credential_provider - Get specific credential provider details
 • update_credential_provider - Update existing credential providers
 • delete_credential_provider - Delete credential providers
+
 """
 
-import json
 import time
-from typing import Any, Dict, List, Optional
-
-import boto3
+from .utils import SDK_AVAILABLE
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
-from .utils import (
-    SDK_AVAILABLE, RUNTIME_AVAILABLE, get_user_working_directory
-)
 
 # ============================================================================
 # IDENTITY MANAGEMENT TOOLS
 # ============================================================================
 
+
 def register_identity_tools(mcp: FastMCP):
     """Register identity and credential provider management tools."""
-    
+
     @mcp.tool()
     async def manage_credentials(
-        action: str = Field(default="list", description="Credential action", enum=[
-            "create", "list", "delete", "get", "update"
-        ]),
-        provider_name: str = Field(default="", description="Name of the credential provider"),
-        api_key: str = Field(default="", description="API key value (for create/update)"),
-        description: str = Field(default="", description="Description of the credential provider"),
-        region: str = Field(default="us-east-1", description="AWS region")
+        action: str = Field(
+            default='list',
+            description='Credential action',
+            enum=['create', 'list', 'delete', 'get', 'update'],
+        ),
+        provider_name: str = Field(default='', description='Name of the credential provider'),
+        api_key: str = Field(default='', description='API key value (for create/update)'),
+        description: str = Field(default='', description='Description of the credential provider'),
+        region: str = Field(default='us-east-1', description='AWS region'),
     ) -> str:
-        """
-        Security: IDENTITY & CREDENTIAL MANAGEMENT
-        
+        """Security: IDENTITY & CREDENTIAL MANAGEMENT.
+
         Manage API key credential providers for use in agents at runtime.
         These providers allow agents to securely access API keys without hardcoding them.
-        
+
         Actions:
         - create: Create a new API key credential provider
         - list: List all credential providers
@@ -53,62 +63,58 @@ def register_identity_tools(mcp: FastMCP):
         - get: Get details of a specific provider
         - update: Update an existing provider
         """
-        
         if not SDK_AVAILABLE:
             return """X AgentCore SDK Not Available
-            
+
 To use credential provider functionality:
 1. Install: `uv add bedrock-agentcore bedrock-agentcore-starter-toolkit`
 2. Configure AWS credentials: `aws configure`
 3. Retry credential operations
 
 Alternative: Use AWS Console for credential management"""
-        
+
         try:
             from bedrock_agentcore.services.identity import IdentityClient
-            
+
             # Initialize Identity Client
             identity_client = IdentityClient(region=region)
-            
+
             # Action: create - Create new API key credential provider
-            if action == "create":
+            if action == 'create':
                 if not provider_name:
                     return """X Error: provider_name is required for create action
-                    
+
 Example:
 ```python
 manage_credentials(
     action="create",
-    provider_name="openai-api-key",
-    api_key="sk-...",
-    description="OpenAI API key for GPT models"
+    provider_name="openai-api-key", # pragma: allowlist secret
+    api_key="sk-...", # pragma: allowlist secret
+    description="OpenAI API key for GPT models" # pragma: allowlist secret
 )
 ```"""
-                
+
                 if not api_key:
                     return """X Error: api_key is required for create action
-                    
+
 Example:
 ```python
 manage_credentials(
-    action="create", 
-    provider_name="my-api-provider",
-    api_key="your-actual-api-key-here"
+    action="create",
+    provider_name="my-api-provider", # pragma: allowlist secret
+    api_key="your-actual-api-key-here" # pragma: allowlist secret
 )
 ```"""
-                
+
                 try:
                     # Create the credential provider
-                    provider_config = {
-                        "name": provider_name,
-                        "apiKey": api_key
-                    }
-                    
+                    provider_config = {'name': provider_name, 'apiKey': api_key}
+
                     if description:
-                        provider_config["description"] = description
-                    
+                        provider_config['description'] = description
+
                     result = identity_client.create_api_key_credential_provider(provider_config)
-                    
+
                     return f"""# OK Credential Provider Created Successfully
 
 ## Provider Details:
@@ -116,7 +122,7 @@ manage_credentials(
 - Type: API Key Credential Provider
 - Region: `{region}`
 - Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
-{f"- Description: {description}" if description else ""}
+{f'- Description: {description}' if description else ''}
 
 ## Usage in Agent Code:
 ```python
@@ -137,10 +143,10 @@ async def my_function(*, api_key: str):
 3. Update if needed: `manage_credentials(action="update", provider_name="{provider_name}")`
 
 Secure: Security: API key is securely stored and encrypted by AWS AgentCore Identity service."""
-                    
+
                 except Exception as create_error:
                     return f"""X Failed to Create Credential Provider
-                    
+
 Provider Name: `{provider_name}`
 Error: {str(create_error)}
 
@@ -155,16 +161,16 @@ Troubleshooting:
 2. Verify AWS credentials: `aws sts get-caller-identity`
 3. Ensure unique provider name
 4. Check API key format"""
-            
+
             # Action: list - List all credential providers
-            elif action == "list":
+            elif action == 'list':
                 try:
                     # Get all credential providers
                     providers = identity_client.list_credential_providers()
-                    
+
                     if not providers or len(providers) == 0:
                         return f"""# Security: No Credential Providers Found
-                        
+
 Region: {region}
 
 ## Getting Started:
@@ -172,9 +178,9 @@ Create your first credential provider:
 ```python
 manage_credentials(
     action="create",
-    provider_name="my-api-key",
-    api_key="your-api-key-here",
-    description="My API service credentials"
+    provider_name="my-api-key", # pragma: allowlist secret
+    api_key="your-api-key-here", # pragma: allowlist secret
+    description="My API service credentials" # pragma: allowlist secret
 )
 ```
 
@@ -189,51 +195,65 @@ manage_credentials(
 - Target: Runtime injection via decorators
 - Note: No hardcoded keys in agent code
 - Reuse: Reusable across multiple agents"""
-                    
+
                     # Format results
                     result_parts = []
-                    result_parts.append("# Security: Credential Providers")
-                    result_parts.append("")
-                    result_parts.append(f"Region: {region}")
-                    result_parts.append(f"Total Providers: {len(providers)}")
-                    result_parts.append("")
-                    
+                    result_parts.append('# Security: Credential Providers')
+                    result_parts.append('')
+                    result_parts.append(f'Region: {region}')
+                    result_parts.append(f'Total Providers: {len(providers)}')
+                    result_parts.append('')
+
                     # List each provider
                     for i, provider in enumerate(providers, 1):
                         name = provider.get('name', 'Unknown')
                         provider_type = provider.get('type', 'API Key')
                         created_at = provider.get('createdAt', 'Unknown')
                         description = provider.get('description', '')
-                        
-                        result_parts.append(f"## {i}. {name}")
-                        result_parts.append(f"- Type: {provider_type}")
-                        result_parts.append(f"- Created: {created_at}")
+
+                        result_parts.append(f'## {i}. {name}')
+                        result_parts.append(f'- Type: {provider_type}')
+                        result_parts.append(f'- Created: {created_at}')
                         if description:
-                            result_parts.append(f"- Description: {description}")
-                        result_parts.append(f"- Usage: `@requires_api_key(provider_name=\"{name}\")`")
-                        result_parts.append(f"- Delete: `manage_credentials(action=\"delete\", provider_name=\"{name}\")`")
-                        result_parts.append("")
-                    
-                    result_parts.append("## Usage Example:")
-                    result_parts.append("```python")
-                    result_parts.append("from bedrock_agentcore.identity.auth import requires_api_key")
-                    result_parts.append("")
-                    result_parts.append(f"@requires_api_key(provider_name=\"{providers[0].get('name', 'your-provider')}\")")
-                    result_parts.append("async def call_external_api(*, api_key: str):")
+                            result_parts.append(f'- Description: {description}')
+                        result_parts.append(
+                            f'- Usage: `@requires_api_key(provider_name="{name}")`'
+                        )
+                        result_parts.append(
+                            f'- Delete: `manage_credentials(action="delete", provider_name="{name}")`'
+                        )
+                        result_parts.append('')
+
+                    result_parts.append('## Usage Example:')
+                    result_parts.append('```python')
+                    result_parts.append(
+                        'from bedrock_agentcore.identity.auth import requires_api_key'
+                    )
+                    result_parts.append('')
+                    result_parts.append(
+                        f'@requires_api_key(provider_name="{providers[0].get("name", "your-provider")}")'
+                    )
+                    result_parts.append('async def call_external_api(*, api_key: str):')
                     result_parts.append("    headers = {'Authorization': f'Bearer {api_key}'}")
-                    result_parts.append("    # Make your API calls...")
-                    result_parts.append("```")
-                    result_parts.append("")
-                    result_parts.append("## Management:")
-                    result_parts.append("- Create new: `manage_credentials(action=\"create\", provider_name=\"name\", api_key=\"key\")`")
-                    result_parts.append("- Get details: `manage_credentials(action=\"get\", provider_name=\"name\")`")
-                    result_parts.append("- Update: `manage_credentials(action=\"update\", provider_name=\"name\", api_key=\"new_key\")`")
-                    
-                    return "\n".join(result_parts)
-                    
+                    result_parts.append('    # Make your API calls...')
+                    result_parts.append('```')
+                    result_parts.append('')
+                    result_parts.append('## Management:')
+                    result_parts.append(
+                        '- Create new: `manage_credentials(action="create", provider_name="name", api_key="key")`'  # pragma: allowlist secret
+                    )
+                    result_parts.append(
+                        '- Get details: `manage_credentials(action="get", provider_name="name")`'
+                    )
+                    result_parts.append(
+                        '- Update: `manage_credentials(action="update", provider_name="name", api_key="new_key")`'  # pragma: allowlist secret
+                    )
+
+                    return '\n'.join(result_parts)
+
                 except Exception as list_error:
                     return f"""X Failed to List Credential Providers
-                    
+
 Region: {region}
 Error: {str(list_error)}
 
@@ -246,16 +266,16 @@ Troubleshooting:
 1. Check AWS credentials: `aws sts get-caller-identity`
 2. Verify AgentCore permissions
 3. Try creating a provider first"""
-            
+
             # Action: delete - Delete credential provider
-            elif action == "delete":
+            elif action == 'delete':
                 if not provider_name:
-                    return "X Error: provider_name is required for delete action"
-                
+                    return 'X Error: provider_name is required for delete action'
+
                 try:
                     # Delete the credential provider
                     identity_client.delete_credential_provider(provider_name)
-                    
+
                     return f"""# OK Credential Provider Deleted
 
 ## Deleted Provider:
@@ -274,10 +294,10 @@ Troubleshooting:
 3. Create new if needed: `manage_credentials(action="create", ...)`
 
 Provider `{provider_name}` has been completely removed."""
-                    
+
                 except Exception as delete_error:
                     return f"""X Failed to Delete Credential Provider
-                    
+
 Provider Name: `{provider_name}`
 Error: {str(delete_error)}
 
@@ -287,16 +307,16 @@ Possible Causes:
 - Insufficient permissions
 
 Check Status: `manage_credentials(action="list")` to see available providers"""
-            
+
             # Action: get - Get provider details
-            elif action == "get":
+            elif action == 'get':
                 if not provider_name:
-                    return "X Error: provider_name is required for get action"
-                
+                    return 'X Error: provider_name is required for get action'
+
                 try:
                     # Get provider details
                     provider = identity_client.get_credential_provider(provider_name)
-                    
+
                     return f"""# Security: Credential Provider Details
 
 ## Provider Information:
@@ -305,7 +325,7 @@ Check Status: `manage_credentials(action="list")` to see available providers"""
 - Region: `{region}`
 - Created: {provider.get('createdAt', 'Unknown')}
 - Status: {provider.get('status', 'Active')}
-{f"- Description: {provider.get('description', '')}" if provider.get('description') else ""}
+{f'- Description: {provider.get("description", "")}' if provider.get('description') else ''}
 
 ## Usage in Agent Code:
 ```python
@@ -319,15 +339,15 @@ async def my_function(*, api_key: str):
 ```
 
 ## Management Options:
-- Update: `manage_credentials(action="update", provider_name="{provider_name}", api_key="new_key")`
+- Update: `manage_credentials(action="update", provider_name="{provider_name}", api_key="new_key")` # pragma: allowlist secret
 - Delete: `manage_credentials(action="delete", provider_name="{provider_name}")`
 - List all: `manage_credentials(action="list")`
 
 Secure: Security: API key value is never displayed for security reasons."""
-                    
+
                 except Exception as get_error:
                     return f"""X Failed to Get Credential Provider
-                    
+
 Provider Name: `{provider_name}`
 Error: {str(get_error)}
 
@@ -336,26 +356,26 @@ Possible Causes:
 - Insufficient permissions
 
 Check Available: `manage_credentials(action="list")`"""
-            
+
             # Action: update - Update credential provider
-            elif action == "update":
+            elif action == 'update':
                 if not provider_name:
-                    return "X Error: provider_name is required for update action"
+                    return 'X Error: provider_name is required for update action'
                 if not api_key:
-                    return "X Error: api_key is required for update action"
-                
+                    return 'X Error: api_key is required for update action'
+
                 try:
                     # Update the credential provider
-                    update_config = {
-                        "name": provider_name,
-                        "apiKey": api_key
-                    }
-                    
+                    update_config = {'name': provider_name, 'apiKey': api_key}
+
                     if description:
-                        update_config["description"] = description
-                    
-                    result = identity_client.update_credential_provider(provider_name, update_config)
-                    
+                        update_config['description'] = description
+
+                    result = identity_client.update_credential_provider(
+                        provider_name, update_config
+                    )
+                    # print(result)
+
                     return f"""# OK Credential Provider Updated
 
 ## Updated Provider:
@@ -363,7 +383,8 @@ Check Available: `manage_credentials(action="list")`"""
 - Status: Successfully updated
 - Region: `{region}`
 - Updated: {time.strftime('%Y-%m-%d %H:%M:%S')}
-{f"- Description: {description}" if description else ""}
+- result: {result}
+{f'- Description: {description}' if description else ''}
 
 ## ! Important Notes:
 - New API key is now active
@@ -376,10 +397,10 @@ Check Available: `manage_credentials(action="list")`"""
 3. Monitor usage: Watch for any authentication errors
 
 Secure: Security: Old API key is securely deleted and new key is encrypted."""
-                    
+
                 except Exception as update_error:
                     return f"""X Failed to Update Credential Provider
-                    
+
 Provider Name: `{provider_name}`
 Error: {str(update_error)}
 
@@ -389,7 +410,7 @@ Possible Causes:
 - Insufficient permissions
 
 Check Status: `manage_credentials(action="get", provider_name="{provider_name}")`"""
-            
+
             else:
                 return f"""X Unknown Action: {action}
 
@@ -402,12 +423,12 @@ Check Status: `manage_credentials(action="get", provider_name="{provider_name}")
 
 ## Example:
 ```python
-manage_credentials(action="create", provider_name="my-key", api_key="secret")
+manage_credentials(action="create", provider_name="my-key", api_key="secret") # pragma: allowlist secret
 ```"""
-            
+
         except ImportError as e:
             return f"""X Required Dependencies Missing
-            
+
 Error: {str(e)}
 
 To use credential provider functionality:
@@ -415,10 +436,10 @@ To use credential provider functionality:
 2. Configure AWS: `aws configure`
 
 Alternative: Use AWS Console for credential management"""
-        
+
         except Exception as e:
             return f"""X Credential Management Error: {str(e)}
-            
+
 Action: {action}
 Provider: {provider_name or 'Not specified'}
 Region: {region}

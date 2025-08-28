@@ -1,6 +1,18 @@
-#!/usr/bin/env python3
-"""
-AgentCore MCP Server - Core Utilities Module
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""AgentCore MCP Server - Core Utilities Module.
 
 Shared utilities for AgentCore operations including authentication,
 environment validation, file resolution, and project discovery.
@@ -13,19 +25,16 @@ Implemented MCP Tools:
 - discover_agentcore_examples: GitHub examples repository integration
 """
 
-import ast
-import glob
-import json
 import re
 import subprocess
-import sys
-import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
+
 
 ## Optional YAML support for configuration parsing
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -33,25 +42,38 @@ except ImportError:
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
+
 ## AgentCore SDK and starter toolkit imports
 try:
-    from bedrock_agentcore import BedrockAgentCoreApp, RequestContext, BedrockAgentCoreContext
-    from bedrock_agentcore.memory import MemoryClient, MemoryControlPlaneClient
+    from bedrock_agentcore import BedrockAgentCoreApp, BedrockAgentCoreContext, RequestContext
+    from bedrock_agentcore._utils.endpoints import (
+        get_control_plane_endpoint,
+        get_data_plane_endpoint,
+    )
+
+    print(get_control_plane_endpoint, get_data_plane_endpoint)
+
+    print(dir(BedrockAgentCoreApp), dir(BedrockAgentCoreContext), dir(RequestContext))
     from bedrock_agentcore.identity import requires_access_token, requires_api_key
-    from bedrock_agentcore.tools import code_session, browser_session, CodeInterpreter, BrowserClient
-    from bedrock_agentcore.services.identity import IdentityClient
+
+    print(dir(requires_access_token), dir(requires_api_key))
+    from bedrock_agentcore.memory import MemoryClient, MemoryControlPlaneClient
+    from bedrock_agentcore.memory.constants import MemoryStatus, StrategyType
+
+    print(dir(MemoryStatus), dir(StrategyType))
     from bedrock_agentcore.runtime.models import PingStatus
-    from bedrock_agentcore.memory.constants import StrategyType, MemoryStatus
-    from bedrock_agentcore._utils.endpoints import get_data_plane_endpoint, get_control_plane_endpoint
-    
+
+    print(dir(PingStatus))
+    from bedrock_agentcore.services.identity import IdentityClient
+
     ## CRITICAL: Import the Runtime class from starter toolkit for actual deployment
     from bedrock_agentcore_starter_toolkit import Runtime
-    from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-    
+    # from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
+
     SDK_AVAILABLE = True
     RUNTIME_AVAILABLE = True
     SDK_IMPORT_ERROR = None
-    
+
     ## SDK capability detection
     SDK_CAPABILITIES = {
         'BedrockAgentCoreApp': {
@@ -59,22 +81,22 @@ try:
             'has_configure': hasattr(BedrockAgentCoreApp, 'configure'),
             'has_launch': hasattr(BedrockAgentCoreApp, 'launch'),
             'has_run': hasattr(BedrockAgentCoreApp, 'run'),
-            'has_entrypoint_decorator': True
+            'has_entrypoint_decorator': True,
         },
         'MemoryClient': {
             'methods': [m for m in dir(MemoryClient) if not m.startswith('_')],
-            'available': True
+            'available': True,
         },
         'MemoryControlPlaneClient': {
             'methods': [m for m in dir(MemoryControlPlaneClient) if not m.startswith('_')],
-            'available': True
+            'available': True,
         },
         'IdentityClient': {
             'methods': [m for m in dir(IdentityClient) if not m.startswith('_')],
-            'available': True
-        }
+            'available': True,
+        },
     }
-    
+
 except ImportError as e:
     SDK_AVAILABLE = False
     RUNTIME_AVAILABLE = False
@@ -83,24 +105,26 @@ except ImportError as e:
 
 ## Core utility functions
 
+
 def validate_sdk_method(class_name: str, method_name: str) -> bool:
     """Validate that a method actually exists in the SDK before using it."""
     if not SDK_AVAILABLE:
         return False
-    
+
     if class_name not in SDK_CAPABILITIES:
         return False
-    
+
     return method_name in SDK_CAPABILITIES[class_name].get('methods', [])
+
 
 def resolve_app_file_path(file_path: str) -> Optional[str]:
     """Resolve agent file path with robust search strategy."""
     import os
-    
+
     ## Get user's actual working directory from environment
     user_cwd = os.environ.get('PWD', os.getcwd())
     user_path = Path(user_cwd)
-    
+
     ## Try multiple path resolution strategies
     search_paths = [
         ## 1. Absolute path as-is
@@ -108,53 +132,55 @@ def resolve_app_file_path(file_path: str) -> Optional[str]:
         ## 2. Relative to user's working directory
         user_path / file_path,
         ## 3. In examples subdirectory
-        user_path / "examples" / Path(file_path).name,
+        user_path / 'examples' / Path(file_path).name,
         ## 4. In current MCP server directory
         Path.cwd() / file_path,
         ## 5. Direct filename search in user directory
         user_path / Path(file_path).name,
     ]
-    
+
     for path in search_paths:
         if path.exists() and path.is_file():
             return str(path.absolute())
-    
+
     return None
+
 
 def get_user_working_directory() -> Path:
     """Get the user's actual working directory, not MCP server's."""
     import os
-    
+
     ## Try environment variables first
     user_cwd = os.environ.get('PWD') or os.environ.get('OLDPWD')
     if user_cwd and Path(user_cwd).exists():
         return Path(user_cwd)
-    
+
     ## Try current working directory
     current_dir = Path.cwd()
     if current_dir.exists():
         return current_dir
-    
+
     ## Last resort - use MCP server cwd
     return Path.cwd()
+
 
 def get_runtime_for_agent(agent_name: str) -> 'Runtime':
     """Get Runtime object - can be recreated as it uses file-based config persistence."""
     if not RUNTIME_AVAILABLE:
-        raise ImportError("Runtime not available")
-    
+        raise ImportError('Runtime not available')
+
     ## Create new Runtime object (they're lightweight and use file persistence)
     runtime = Runtime()
-    
+
     ## CRITICAL: Runtime needs _config_path to be set for status() and invoke() to work
     config_found, config_dir = find_agent_config_directory(agent_name)
     if config_found:
-        config_path = config_dir / ".bedrock_agentcore.yaml"
-        
+        config_path = config_dir / '.bedrock_agentcore.yaml'
+
         ## Set the config path directly on the Runtime object
         runtime._config_path = config_path
         runtime.name = agent_name
-        
+
         ## For multi-agent configs, ensure the requested agent is set as default
         if YAML_AVAILABLE and config_path.exists():
             try:
@@ -172,14 +198,15 @@ def get_runtime_for_agent(agent_name: str) -> 'Runtime':
         ## No config found - Runtime will fail with proper error message
         runtime._config_path = None
         runtime.name = agent_name
-    
+
     return runtime
+
 
 def check_agent_config_exists(agent_name: str) -> tuple[bool, Path]:
     """Check if agent has existing config file (persistent across MCP server restarts)."""
     ## Look for config file in current directory (where configure() creates it)
-    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-    
+    config_path = Path.cwd() / '.bedrock_agentcore.yaml'
+
     if config_path.exists():
         ## Check if this config is for our agent
         if YAML_AVAILABLE:
@@ -188,24 +215,26 @@ def check_agent_config_exists(agent_name: str) -> tuple[bool, Path]:
                     config = yaml.safe_load(f)
                     if config and config.get('agent_name') == agent_name:
                         return True, config_path
-            except:
+            except Exception as e:
+                print(f'Error reading config file: {e}')
                 pass
         ## If YAML not available, assume config exists if file exists
         return True, config_path
-    
+
     return False, config_path
+
 
 def find_agent_config_directory(agent_name: str) -> tuple[bool, Path]:
     """Find the directory containing the agent's configuration file."""
     search_paths = [
         Path.cwd(),  ## Current directory
         get_user_working_directory(),  ## User's working directory
-        get_user_working_directory() / "examples",  ## Examples subdirectory
-        Path.cwd() / "examples",  ## Examples in current dir
+        get_user_working_directory() / 'examples',  ## Examples subdirectory
+        Path.cwd() / 'examples',  ## Examples in current dir
     ]
-    
+
     for search_path in search_paths:
-        config_path = search_path / ".bedrock_agentcore.yaml"
+        config_path = search_path / '.bedrock_agentcore.yaml'
         if config_path.exists() and YAML_AVAILABLE:
             try:
                 with open(config_path, 'r') as f:
@@ -217,29 +246,33 @@ def find_agent_config_directory(agent_name: str) -> tuple[bool, Path]:
                         ## Check complex format (agents dict)
                         if 'agents' in config and agent_name in config['agents']:
                             return True, search_path
-            except:
+            except Exception as e:
+                print(f'Error reading config file: {e}')
                 continue
-    
+
     return False, Path.cwd()
+
 
 async def get_agentcore_command():
     """Get the appropriate agentcore command based on environment."""
     ## Check if uv is available
     try:
-        result = subprocess.run(["which", "uv"], capture_output=True, text=True)
+        result = subprocess.run(['which', 'uv'], capture_output=True, text=True)
         if result.returncode == 0:
-            return ["uv", "run", "agentcore"]
-    except:
+            return ['uv', 'run', 'agentcore']
+    except Exception as e:
+        print(f'Error checking uv command: {e}')
         pass
-    
+
     ## Check for virtual environment
-    if Path(".venv/bin/python").exists():
-        return [".venv/bin/python", "-m", "agentcore"]
-    elif Path("venv/bin/python").exists():
-        return ["venv/bin/python", "-m", "agentcore"]
-    
+    if Path('.venv/bin/python').exists():
+        return ['.venv/bin/python', '-m', 'agentcore']
+    elif Path('venv/bin/python').exists():
+        return ['venv/bin/python', '-m', 'agentcore']
+
     ## Default to system agentcore
-    return "agentcore"
+    return 'agentcore'
+
 
 def analyze_code_patterns(code: str) -> Dict[str, Any]:
     """Analyze code to detect framework and patterns."""
@@ -248,9 +281,9 @@ def analyze_code_patterns(code: str) -> Dict[str, Any]:
         'patterns': [],
         'dependencies': [],
         'agent_creation': None,
-        'handler_function': None
+        'handler_function': None,
     }
-    
+
     ## Detect framework
     if 'from strands import Agent' in code or 'import strands' in code:
         patterns['framework'] = 'strands'
@@ -267,11 +300,11 @@ def analyze_code_patterns(code: str) -> Dict[str, Any]:
     else:
         patterns['framework'] = 'custom'
         patterns['patterns'].append('Custom agent implementation')
-    
+
     ## Extract imports
     import_matches = re.findall(r'(?:from|import)\s+([a-zA-Z_][a-zA-Z0-9_]*)', code)
     patterns['dependencies'] = list(set(import_matches))
-    
+
     ## Find agent creation
     agent_patterns = [
         r'agent\s*=\s*Agent\(',
@@ -282,98 +315,114 @@ def analyze_code_patterns(code: str) -> Dict[str, Any]:
         if re.search(pattern, code):
             patterns['agent_creation'] = pattern
             break
-    
+
     ## Find handler/main function
     handler_patterns = [
         r'def\s+handler\(',
         r'def\s+main\(',
         r'@app\.entrypoint',
-        r'if __name__ == ["\']__main__["\']:'
+        r'if __name__ == ["\']__main__["\']:',
     ]
     for pattern in handler_patterns:
         if re.search(pattern, code):
             patterns['handler_function'] = pattern
             break
-    
+
     return patterns
+
 
 def format_patterns(patterns: List[str]) -> str:
     """Format detected patterns for display."""
     if not patterns:
-        return "- No specific patterns detected"
-    return '\n'.join(f"- {pattern}" for pattern in patterns)
+        return '- No specific patterns detected'
+    return '\n'.join(f'- {pattern}' for pattern in patterns)
+
 
 def format_dependencies(dependencies: List[str]) -> str:
     """Format dependencies for display."""
     if not dependencies:
-        return "- No dependencies detected"
-    return '\n'.join(f"- {dep}" for dep in dependencies[:10])  ## Limit to first 10
+        return '- No dependencies detected'
+    return '\n'.join(f'- {dep}' for dep in dependencies[:10])  ## Limit to first 10
+
 
 def format_features_added(options: Dict[str, bool]) -> str:
     """Format features that were added."""
     features = []
     if options.get('add_memory'):
-        features.append("OK Memory integration added")
+        features.append('OK Memory integration added')
     if options.get('add_tools'):
-        features.append("OK Code interpreter and browser tools added")
-    
-    features.append("OK AgentCore deployment wrapper")
-    features.append("OK Production-ready structure")
-    
+        features.append('OK Code interpreter and browser tools added')
+
+    features.append('OK AgentCore deployment wrapper')
+    features.append('OK Production-ready structure')
+
     return '\n'.join(features)
+
 
 def get_next_steps(memory_enabled: bool) -> str:
     """Get appropriate next steps based on configuration."""
     steps = []
-    
+
     if not memory_enabled:
-        steps.append("- Use `configure_agent_memory` to add memory capabilities")
-    
-    steps.extend([
-        "- Use `setup_agent_identity` to add authentication",
-        "- Use `test_deployed_agent` to verify functionality",
-        "- Monitor with CloudWatch or AgentCore dashboard"
-    ])
-    
+        steps.append('- Use `configure_agent_memory` to add memory capabilities')
+
+    steps.extend(
+        [
+            '- Use `setup_agent_identity` to add authentication',
+            '- Use `test_deployed_agent` to verify functionality',
+            '- Monitor with CloudWatch or AgentCore dashboard',
+        ]
+    )
+
     return '\n'.join(steps)
+
 
 ## ============================================================================
 ## OAUTH ACCESS TOKEN GENERATION
 ## ============================================================================
 
+
 def register_oauth_tools(mcp: FastMCP):
     """Register OAuth-related tools with the MCP server."""
-    
+
     @mcp.tool()
     async def get_oauth_access_token(
-        method: str = Field(default="ask", description="Token generation method", enum=["ask", "gateway_client", "manual_curl"]),
-        gateway_name: str = Field(default="", description="Gateway name (for gateway_client method)"),
-        client_id: str = Field(default="", description="OAuth client ID (for manual_curl method)"),
-        client_secret: str = Field(default="", description="OAuth client secret (for manual_curl method)"),
-        token_endpoint: str = Field(default="", description="OAuth token endpoint URL (for manual_curl method)"),
-        scope: str = Field(default="", description="OAuth scope (for manual_curl method)"),
-        region: str = Field(default="us-east-1", description="AWS region")
+        method: str = Field(
+            default='ask',
+            description='Token generation method',
+            enum=['ask', 'gateway_client', 'manual_curl'],
+        ),
+        gateway_name: str = Field(
+            default='', description='Gateway name (for gateway_client method)'
+        ),
+        client_id: str = Field(default='', description='OAuth client ID (for manual_curl method)'),
+        client_secret: str = Field(
+            default='', description='OAuth client secret (for manual_curl method)'
+        ),
+        token_endpoint: str = Field(
+            default='', description='OAuth token endpoint URL (for manual_curl method)'
+        ),
+        scope: str = Field(default='', description='OAuth scope (for manual_curl method)'),
+        region: str = Field(default='us-east-1', description='AWS region'),
     ) -> str:
-        """
-        Generate OAuth access tokens for AgentCore gateways using multiple methods.
-        
+        """Generate OAuth access tokens for AgentCore gateways using multiple methods.
+
         Methods:
         - gateway_client: Uses simplified GatewayClient from starter toolkit (recommended)
         - manual_curl: Direct OAuth 2.0 client credentials flow via HTTP
         - ask: Present both options to choose from
         """
-        
         try:
             ## Method: ask - Present options
-            if method == "ask":
-                return f"""## 🔐 OAuth Access Token Generation - Choose Your Method
+            if method == 'ask':
+                return """## 🔐 OAuth Access Token Generation - Choose Your Method
 
 #### Option 1: Gateway Client (Recommended)
 Uses the simplified `GatewayClient` from the bedrock-agentcore-starter-toolkit.
 
 Advantages:
 - OK Built-in retry logic and error handling
-- OK Automatic DNS propagation handling  
+- OK Automatic DNS propagation handling
 - OK Abstracts OAuth complexity
 - OK Works with stored gateway configurations
 
@@ -398,8 +447,8 @@ Usage:
 ```python
 get_oauth_access_token(
     method="manual_curl",
-    client_id="your-client-id",
-    client_secret="your-client-secret", 
+    client_id="<your-client-id>",
+    client_secret="<your-client-secrt>",
     token_endpoint="https://your-domain.auth.region.amazoncognito.com/oauth2/token",
     scope="gateway-name/invoke"
 )
@@ -410,16 +459,16 @@ If you have a gateway but need credentials, first get them:
 agent_gateway(action="auth", gateway_name="your-gateway-name")
 
 Choose your preferred method and call this tool again with the appropriate parameters."""
-            
-            ## Method: gateway_client - Use simplified toolkit approach  
-            elif method == "gateway_client":
+
+            ## Method: gateway_client - Use simplified toolkit approach
+            elif method == 'gateway_client':
                 if not gateway_name:
-                    return "Error: gateway_name is required for gateway_client method"
-                
+                    return 'Error: gateway_name is required for gateway_client method'
+
                 try:
                     if not RUNTIME_AVAILABLE:
                         return """Gateway Client Not Available
-                        
+
 Issue: bedrock-agentcore-starter-toolkit not installed
 
 To install:
@@ -430,27 +479,31 @@ pip install bedrock-agentcore-starter-toolkit
 ```
 
 Alternative: Use `method="manual_curl"` with explicit credentials"""
-                    
+
                     ## Use the starter toolkit GatewayClient approach
-                    from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-                    
+                    import json
+
                     ## Load gateway configuration
                     import os
-                    import json
-                    
-                    config_dir = os.path.expanduser("~/.agentcore_gateways")
-                    config_file = os.path.join(config_dir, f"{gateway_name}.json")
-                    
+                    from bedrock_agentcore_starter_toolkit.operations.gateway.client import (
+                        GatewayClient,
+                    )
+
+                    config_dir = os.path.expanduser('~/.agentcore_gateways')
+                    config_file = os.path.join(config_dir, f'{gateway_name}.json')
+
                     if not os.path.exists(config_file):
                         ## Try to get cognito info from gateway setup
                         runtime = Runtime()
                         try:
                             ## Create OAuth if not exists (EZ Auth)
-                            cognito_result = runtime.create_oauth_authorizer_with_cognito(gateway_name)
+                            cognito_result = runtime.create_oauth_authorizer_with_cognito(
+                                gateway_name
+                            )
                             client_info = cognito_result.get('client_info', {})
                         except Exception as e:
                             return f"""Gateway Configuration Not Found: `{gateway_name}`
-                            
+
 Issue: No stored configuration and failed to create OAuth setup
 Error: {str(e)}
 
@@ -465,25 +518,25 @@ Config Directory: `{config_dir}`"""
                         with open(config_file, 'r') as f:
                             gateway_config = json.load(f)
                         client_info = gateway_config.get('cognito_client_info', {})
-                    
+
                     if not client_info:
                         return f"""Missing OAuth Configuration: `{gateway_name}`
-                        
+
 Issue: Gateway exists but missing OAuth client info
 
 Solutions:
-1. Recreate gateway: `agent_gateway(action="setup", gateway_name="{gateway_name}")`  
+1. Recreate gateway: `agent_gateway(action="setup", gateway_name="{gateway_name}")`
 2. Use manual method: Get credentials from AWS Cognito Console
 3. Check configuration: `{config_file}`"""
-                    
+
                     ## Get access token using GatewayClient
                     gateway_client = GatewayClient(region_name=region)
                     access_token = gateway_client.get_access_token_for_cognito(client_info)
-                    
+
                     return f"""## OK Access Token Generated (Gateway Client)
 
 #### Gateway: `{gateway_name}`
-- Method: Simplified GatewayClient  
+- Method: Simplified GatewayClient
 - Region: {region}
 - Token Type: Bearer
 
@@ -526,16 +579,16 @@ curl -H "Authorization: Bearer {access_token}" \\
 - Gateway URL: Check AWS Console for exact endpoint URL
 
 Success: Ready to connect to gateway with simplified token management!"""
-                    
+
                 except Exception as e:
                     return f"""Gateway Client Error: {str(e)}
-                    
+
 Gateway: `{gateway_name}`
 Method: gateway_client
 
 Possible Causes:
 - Gateway configuration missing or invalid
-- Network connectivity issues  
+- Network connectivity issues
 - AWS credentials expired
 - Cognito User Pool or App Client deleted
 
@@ -544,14 +597,14 @@ Solutions:
 2. Recreate gateway: `agent_gateway(action="setup", gateway_name="{gateway_name}")`
 3. Try manual method: Use explicit OAuth credentials
 4. Check AWS Console: Verify Cognito User Pool exists"""
-            
+
             ## Method: manual_curl - Direct OAuth 2.0 flow
-            elif method == "manual_curl":
+            elif method == 'manual_curl':
                 if not all([client_id, client_secret, token_endpoint, scope]):
                     return """Missing Required Parameters for Manual cURL
 
 Required Parameters:
-- `client_id`: OAuth client ID from Cognito  
+- `client_id`: OAuth client ID from Cognito
 - `client_secret`: OAuth client secret from Cognito
 - `token_endpoint`: OAuth token endpoint URL
 - `scope`: OAuth scope (usually gateway-name/invoke)
@@ -560,9 +613,9 @@ Example:
 ```python
 get_oauth_access_token(
     method="manual_curl",
-    client_id="<random-client-id>",
-    client_secret="<long-random-client-secret-asdasdaasfasfasf>",
-    token_endpoint="https://agentcore-<id>.auth.us-east-1.amazoncognito.com/oauth2/token", 
+    client_id="<your-client-id>",
+    client_secret="<your-client-secrt>",
+    token_endpoint="https://agentcore-cf32b91a.auth.us-east-1.amazoncognito.com/oauth2/token",
     scope="clean-dynamodb-gateway/invoke"
 )
 ```
@@ -570,42 +623,47 @@ get_oauth_access_token(
 To get credentials:
 1. From existing gateway: `agent_gateway(action="auth", gateway_name="your-gateway")`
 2. From AWS Console: Cognito → User Pools → App clients"""
-                
+
                 try:
-                    import subprocess
                     import json
-                    
+                    import subprocess
+
                     ## Build curl command for OAuth 2.0 client credentials flow
                     curl_cmd = [
-                        "curl", "-X", "POST", token_endpoint,
-                        "-H", "Content-Type: application/x-www-form-urlencoded",
-                        "-d", f"grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}",
-                        "--silent"
+                        'curl',
+                        '-X',
+                        'POST',
+                        token_endpoint,
+                        '-H',
+                        'Content-Type: application/x-www-form-urlencoded',
+                        '-d',
+                        f'grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}',
+                        '--silent',
                     ]
-                    
+
                     ## Execute curl command
                     result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=30)
-                    
+
                     if result.returncode == 0:
                         try:
                             ## Parse JSON response
                             token_data = json.loads(result.stdout)
-                            access_token = token_data.get("access_token")
-                            token_type = token_data.get("token_type", "Bearer")
-                            expires_in = token_data.get("expires_in", "Unknown")
-                            
+                            access_token = token_data.get('access_token')
+                            token_type = token_data.get('token_type', 'Bearer')
+                            expires_in = token_data.get('expires_in', 'Unknown')
+
                             if not access_token:
                                 return f"""No Access Token in Response
-                                
+
 Response: {result.stdout}
 Token Endpoint: {token_endpoint}
 
 Possible Issues:
 - Invalid client credentials
-- Incorrect scope  
+- Incorrect scope
 - Token endpoint URL wrong
 - Cognito configuration issues"""
-                            
+
                             return f"""## OK Access Token Generated (Manual cURL)
 
 #### OAuth Details:
@@ -667,10 +725,10 @@ def get_fresh_token():
 ```
 
 Success: Ready to use with full manual control over OAuth flow!"""
-                            
+
                         except json.JSONDecodeError:
                             return f"""Invalid JSON Response
-                            
+
 Raw Response: {result.stdout}
 Error Response: {result.stderr}
 Token Endpoint: {token_endpoint}
@@ -678,12 +736,12 @@ Token Endpoint: {token_endpoint}
 Possible Issues:
 - Token endpoint URL is incorrect
 - OAuth server returned HTML error page
-- Network connectivity issues  
+- Network connectivity issues
 - DNS resolution problems"""
-                    
+
                     else:
                         return f"""OAuth Request Failed
-                        
+
 cURL Error: {result.stderr}
 Exit Code: {result.returncode}
 Token Endpoint: {token_endpoint}
@@ -700,16 +758,16 @@ curl -X POST {token_endpoint} \\
   -H "Content-Type: application/x-www-form-urlencoded" \\
   -d "grant_type=client_credentials&client_id={client_id}&client_secret=***&scope={scope}"
 ```"""
-                    
+
                 except subprocess.TimeoutExpired:
                     return f"""OAuth Request Timeout
-                    
+
 Token Endpoint: {token_endpoint}
 Timeout: 30 seconds
 
 Possible Causes:
 - Network connectivity issues
-- DNS resolution problems  
+- DNS resolution problems
 - Token endpoint server issues
 - Firewall blocking the request
 
@@ -718,10 +776,10 @@ Troubleshooting:
 2. Check DNS: `nslookup {token_endpoint.split('/')[2]}`
 3. Try from browser: Visit the endpoint URL
 4. Check network settings: VPN, proxy, firewall"""
-                
+
                 except Exception as e:
                     return f"""Manual cURL Error: {str(e)}
-                    
+
 Token Endpoint: {token_endpoint}
 Client ID: {client_id}
 
@@ -731,156 +789,176 @@ Possible Causes:
 - System/environment issues
 
 Alternative: Try the gateway_client method for automated handling"""
-            
+
             else:
                 return f"""Unknown Method: `{method}`
 
 Available Methods:
 - `ask` - Show method options (default)
-- `gateway_client` - Use simplified GatewayClient (recommended)  
+- `gateway_client` - Use simplified GatewayClient (recommended)
 - `manual_curl` - Direct OAuth 2.0 client credentials flow
 
 Example:
 ```python
 get_oauth_access_token(method="gateway_client", gateway_name="my-gateway")
 ```"""
-        
+
         except Exception as e:
-            return f"OAuth Token Generation Error: {str(e)}"
+            return f'OAuth Token Generation Error: {str(e)}'
+
 
 ## ============================================================================
-## ENVIRONMENT VALIDATION TOOLS  
+## ENVIRONMENT VALIDATION TOOLS
 ## ============================================================================
+
 
 def register_environment_tools(mcp: FastMCP):
     """Register environment validation tools with the MCP server."""
-    
+
     @mcp.tool()
     async def validate_agentcore_environment(
-        project_path: str = Field(default=".", description="Path to project directory"),
-        check_existing_agents: bool = Field(default=True, description="Check for existing agent configurations")
+        project_path: str = Field(default='.', description='Path to project directory'),
+        check_existing_agents: bool = Field(
+            default=True, description='Check for existing agent configurations'
+        ),
     ) -> str:
         """Validate AgentCore development environment and check for existing agent configurations."""
-        
         try:
             ## Use improved directory resolution
-            if project_path == ".":
+            if project_path == '.':
                 path = get_user_working_directory()
             else:
                 path = Path(project_path)
                 if not path.is_absolute():
                     path = get_user_working_directory() / project_path
-            
+
             validation_results = []
             issues = []
-            
+
             ## Check if path exists
             if not path.exists():
                 return f"Project path '{project_path}' does not exist"
-            
-            validation_results.append(f"OK Project directory: {path.absolute()}")
-            
+
+            validation_results.append(f'OK Project directory: {path.absolute()}')
+
             ## Check virtual environment
-            if Path(".venv").exists():
-                validation_results.append("OK Virtual environment (.venv) found")
-            elif Path("venv").exists():
-                validation_results.append("OK Virtual environment (venv) found")
+            if Path('.venv').exists():
+                validation_results.append('OK Virtual environment (.venv) found')
+            elif Path('venv').exists():
+                validation_results.append('OK Virtual environment (venv) found')
             else:
-                issues.append("! No virtual environment detected")
-            
+                issues.append('! No virtual environment detected')
+
             ## Check for UV
             try:
-                result = subprocess.run(["which", "uv"], capture_output=True, text=True)
+                result = subprocess.run(['which', 'uv'], capture_output=True, text=True)
                 if result.returncode == 0:
-                    validation_results.append("OK UV package manager available")
+                    validation_results.append('OK UV package manager available')
                 else:
-                    issues.append("Info: UV not found (optional)")
-            except:
-                issues.append("Info: UV not found (optional)")
-            
+                    issues.append('Info: UV not found (optional)')
+            except Exception:
+                issues.append('Info: UV not found (optional)')
+
             ## Check AgentCore CLI
             agentcore_cmd = await get_agentcore_command()
             try:
                 if isinstance(agentcore_cmd, list):
-                    test_cmd = agentcore_cmd + ["--help"]
+                    test_cmd = agentcore_cmd + ['--help']
                 else:
-                    test_cmd = [agentcore_cmd, "--help"]
-                
+                    test_cmd = [agentcore_cmd, '--help']
+
                 result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=10)
                 if result.returncode == 0:
-                    validation_results.append(f"OK AgentCore CLI available")
+                    validation_results.append('OK AgentCore CLI available')
                 else:
-                    issues.append("X AgentCore CLI not working properly")
-            except:
-                issues.append("X AgentCore CLI not found")
-            
+                    issues.append('X AgentCore CLI not working properly')
+            except Exception as e:
+                issues.append(f'X AgentCore CLI not found + {str(e)}')
+
             ## Check AWS credentials
             try:
-                result = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True, timeout=10)
+                result = subprocess.run(
+                    ['aws', 'sts', 'get-caller-identity'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
                 if result.returncode == 0:
-                    validation_results.append("OK AWS credentials configured")
+                    validation_results.append('OK AWS credentials configured')
                 else:
-                    issues.append("! AWS credentials not configured")
-            except:
-                issues.append("! AWS CLI not found or credentials not configured")
-            
+                    issues.append('! AWS credentials not configured')
+            except Exception:
+                issues.append('! AWS CLI not found or credentials not configured')
+
             ## Check Python files
-            python_files = list(path.glob("*.py"))
+            python_files = list(path.glob('*.py'))
             if python_files:
-                validation_results.append(f"OK Found {len(python_files)} Python files")
+                validation_results.append(f'OK Found {len(python_files)} Python files')
             else:
-                issues.append("Info: No Python files found in project directory")
-            
+                issues.append('Info: No Python files found in project directory')
+
             ## Check for AgentCore applications
             agentcore_apps = []
             for py_file in python_files:
                 try:
                     with open(py_file, 'r') as f:
                         content = f.read()
-                        if "BedrockAgentCoreApp" in content:
+                        if 'BedrockAgentCoreApp' in content:
                             agentcore_apps.append(py_file.name)
-                except:
+                except Exception as e:
+                    print(f'Error reading: {str(e)}')
                     pass
-            
+
             if agentcore_apps:
-                validation_results.append(f"OK AgentCore applications found: {', '.join(agentcore_apps)}")
+                validation_results.append(
+                    f'OK AgentCore applications found: {", ".join(agentcore_apps)}'
+                )
             else:
-                issues.append("Info: No AgentCore applications detected")
-            
+                issues.append('Info: No AgentCore applications detected')
+
             ## Check for existing agent configurations
             existing_agents = []
             if check_existing_agents:
-                config_files = list(path.glob(".bedrock_agentcore*.yaml")) + list(path.glob("**/.bedrock_agentcore*.yaml"))
+                config_files = list(path.glob('.bedrock_agentcore*.yaml')) + list(
+                    path.glob('**/.bedrock_agentcore*.yaml')
+                )
                 for config_file in config_files:
                     try:
                         if YAML_AVAILABLE:
                             with open(config_file, 'r') as f:
                                 config = yaml.safe_load(f)
                                 if config and config.get('agent_name'):
-                                    existing_agents.append({
-                                        'name': config['agent_name'],
-                                        'config_file': str(config_file.relative_to(path)),
-                                        'status': 'configured'
-                                    })
+                                    existing_agents.append(
+                                        {
+                                            'name': config['agent_name'],
+                                            'config_file': str(config_file.relative_to(path)),
+                                            'status': 'configured',
+                                        }
+                                    )
                         else:
-                            existing_agents.append({
-                                'name': config_file.stem.replace('.bedrock_agentcore', ''),
-                                'config_file': str(config_file.relative_to(path)),
-                                'status': 'configured'
-                            })
-                    except:
+                            existing_agents.append(
+                                {
+                                    'name': config_file.stem.replace('.bedrock_agentcore', ''),
+                                    'config_file': str(config_file.relative_to(path)),
+                                    'status': 'configured',
+                                }
+                            )
+                    except Exception as e:
+                        print(f'Error reading config: {str(e)}')
                         continue
-                
+
                 if existing_agents:
-                    validation_results.append(f"Update: Existing agent configurations found: {len(existing_agents)}")
+                    validation_results.append(
+                        f'Update: Existing agent configurations found: {len(existing_agents)}'
+                    )
                     for agent in existing_agents:
-                        validation_results.append(f"  - {agent['name']} ({agent['config_file']})")
+                        validation_results.append(f'  - {agent["name"]} ({agent["config_file"]})')
                 else:
-                    validation_results.append("Info: No existing agent configurations found")
-            
+                    validation_results.append('Info: No existing agent configurations found')
+
             ## Generate report
-            status = "OK READY" if not any("X" in issue for issue in issues) else "! ISSUES FOUND"
-            
+            status = 'OK READY' if not any('X' in issue for issue in issues) else '! ISSUES FOUND'
+
             return f"""## Search: AgentCore Environment Validation
 
 #### Status: {status}
@@ -889,7 +967,7 @@ def register_environment_tools(mcp: FastMCP):
 {chr(10).join(validation_results)}
 
 #### Issues & Notes:
-{chr(10).join(issues) if issues else "OK No issues found"}
+{chr(10).join(issues) if issues else 'OK No issues found'}
 
 #### Project Summary:
 - Directory: `{path.absolute()}`
@@ -897,96 +975,104 @@ def register_environment_tools(mcp: FastMCP):
 - AgentCore apps: {len(agentcore_apps)}
 - Existing agents: {len(existing_agents)}
 
-{format_existing_agents_summary(existing_agents) if existing_agents else ""}
+{format_existing_agents_summary(existing_agents) if existing_agents else ''}
 
 #### Next Steps:
 {get_environment_next_steps(issues, existing_agents)}"""
         except Exception as e:
-            return f"Environment Validation Error: {str(e)}"
+            return f'Environment Validation Error: {str(e)}'
+
 
 def get_environment_next_steps(issues: List[str], existing_agents: List[dict] = None) -> str:
     """Generate next steps based on validation issues."""
     if existing_agents is None:
         existing_agents = []
-        
+
     steps = []
-    
-    if any("AgentCore CLI" in issue for issue in issues):
-        steps.append("1. Install AgentCore from PyPI: `uv add bedrock-agentcore bedrock-agentcore-starter-toolkit`")
-    
-    if any("AWS credentials" in issue for issue in issues):
-        steps.append("2. Configure AWS credentials: `aws configure`")
-    
-    if any("virtual environment" in issue for issue in issues):
-        steps.append("3. Create virtual environment: `python -m venv .venv && source .venv/bin/activate`")
-    
-    if any("AgentCore applications" in issue for issue in issues):
-        steps.append("4. Use `analyze_agent_code` to analyze existing code or `transform_to_agentcore` to create AgentCore apps")
-    
+
+    if any('AgentCore CLI' in issue for issue in issues):
+        steps.append(
+            '1. Install AgentCore from PyPI: `uv add bedrock-agentcore bedrock-agentcore-starter-toolkit`'
+        )
+
+    if any('AWS credentials' in issue for issue in issues):
+        steps.append('2. Configure AWS credentials: `aws configure`')
+
+    if any('virtual environment' in issue for issue in issues):
+        steps.append(
+            '3. Create virtual environment: `python -m venv .venv && source .venv/bin/activate`'
+        )
+
+    if any('AgentCore applications' in issue for issue in issues):
+        steps.append(
+            '4. Use `analyze_agent_code` to analyze existing code or `transform_to_agentcore` to create AgentCore apps'
+        )
+
     if not steps:
         steps = [
-            "1. Your environment is ready! Use `analyze_agent_code` to start migration",
-            "2. Or use `deploy_agentcore_app` to deploy existing AgentCore applications"
+            '1. Your environment is ready! Use `analyze_agent_code` to start migration',
+            '2. Or use `deploy_agentcore_app` to deploy existing AgentCore applications',
         ]
-    
+
     return chr(10).join(steps)
+
 
 def format_existing_agents_summary(existing_agents: List[dict]) -> str:
     """Format existing agents summary."""
     if not existing_agents:
-        return ""
-    
+        return ''
+
     summary = []
-    summary.append("#### Update: Existing Agent Configurations Found:")
-    
+    summary.append('#### Update: Existing Agent Configurations Found:')
+
     for agent in existing_agents:
-        summary.append(f"##### {agent['name']}")
-        summary.append(f"- Status: {agent['status'].title()}")
-        summary.append(f"- Config File: `{agent['config_file']}`")
-        summary.append(f"- Ready to invoke: Use `invoke_agent` with agent_name: `{agent['name']}`")
-        summary.append("")
-    
+        summary.append(f'##### {agent["name"]}')
+        summary.append(f'- Status: {agent["status"].title()}')
+        summary.append(f'- Config File: `{agent["config_file"]}`')
+        summary.append(f'- Ready to invoke: Use `invoke_agent` with agent_name: `{agent["name"]}`')
+        summary.append('')
+
     return chr(10).join(summary)
+
 
 ## ============================================================================
 ## ENHANCED AGENT DISCOVERY AND RUNTIME MANAGEMENT (FROM LEGACY SERVERS)
 ## ============================================================================
 
-def what_agents_can_i_invoke(region: str = "us-east-1") -> str:
-    """
-    Target: WHAT AGENTS CAN I INVOKE?
-    
+
+def what_agents_can_i_invoke(region: str = 'us-east-1') -> str:
+    """Target: WHAT AGENTS CAN I INVOKE?
+
     Smart overlap analysis combining local YAML configs with actual AWS deployments.
     Shows exactly what you can invoke, launch, or update with specific agent names.
-    
+
     Categories:
     - Ready: Ready to Invoke: Deployed on AWS (invoke immediately)
     - Pending: Ready to Launch: Local config only (launch then invoke)
     - 🔵 Ready to Update: Both local + AWS but not ready
     """
-    
     try:
         import boto3
-        
+
         ## Get AWS deployed agents with timeout
         aws_agents = {}
         try:
             client = boto3.client('bedrock-agentcore-control', region_name=region)
             ## Use shorter timeout to prevent hanging
             aws_response = client.list_agent_runtimes(maxResults=50)
-            
+
             for runtime in aws_response.get('agentRuntimes', []):
-                name = runtime.get('name', 'unknown')
+                name = runtime.get('agentRuntimeName', runtime.get('name', 'unknown'))
                 if name != 'unknown':
                     aws_agents[name] = {
                         'status': runtime.get('status', 'unknown'),
-                        'endpoint_status': runtime.get('endpoint', {}).get('status', 'UNKNOWN'),
-                        'arn': runtime.get('arn', '')
+                        'endpoint_status': runtime.get('status', 'UNKNOWN'),
+                        'arn': runtime.get('agentRuntimeArn', runtime.get('arn', '')),
                     }
         except Exception:
             ## If AWS fails, continue with local-only analysis
             aws_agents = {}
-        
+
         ## Get local configured agents from YAML
         local_agents = {}
         try:
@@ -1001,37 +1087,42 @@ def what_agents_can_i_invoke(region: str = "us-east-1") -> str:
                                 bedrock_agentcore = agent_config.get('bedrock_agentcore', {})
                                 agent_arn = bedrock_agentcore.get('agent_arn')
                                 agent_id = bedrock_agentcore.get('agent_id')
-                                
+
                                 ## Determine if this agent is deployed
-                                is_deployed = agent_arn and agent_id and agent_arn != 'null' and agent_id != 'null'
-                                
+                                is_deployed = (
+                                    agent_arn
+                                    and agent_id
+                                    and agent_arn != 'null'
+                                    and agent_id != 'null'
+                                )
+
                                 local_agents[agent_name] = {
                                     'entrypoint': agent_config.get('entrypoint', 'unknown'),
                                     'config_file': str(config_file),
                                     'is_deployed': is_deployed,
                                     'agent_arn': agent_arn,
-                                    'agent_id': agent_id
+                                    'agent_id': agent_id,
                                 }
         except Exception:
             pass
-        
+
         ## Analyze overlap and deployment status
         aws_only = set(aws_agents.keys()) - set(local_agents.keys())
         local_only = set(local_agents.keys()) - set(aws_agents.keys())
         both = set(aws_agents.keys()) & set(local_agents.keys())
-        
+
         ## Find locally deployed agents (have agent_arn in YAML)
         locally_deployed = []
         for name, config in local_agents.items():
             if config.get('is_deployed', False):
                 locally_deployed.append(name)
-        
+
         ## Categorize by readiness
         ready_to_invoke = []
         ready_to_update = []
         ready_to_launch = []
         aws_not_ready = []
-        
+
         ## Check AWS deployed agents
         for name in aws_only | both:
             if name in aws_agents and aws_agents[name]['endpoint_status'] == 'READY':
@@ -1040,19 +1131,19 @@ def what_agents_can_i_invoke(region: str = "us-east-1") -> str:
                 ready_to_update.append(name)
             else:
                 aws_not_ready.append(name)
-        
+
         ## Check locally deployed agents (from YAML with agent_arn)
         for name in locally_deployed:
             if name not in ready_to_invoke and name not in ready_to_update:
                 ## This agent is deployed according to local config but not found on AWS query
                 ## It might be deployed but AWS query failed, so mark as ready to invoke
                 ready_to_invoke.append(name)
-        
+
         ## Find agents that need launching
         for name in local_only:
             if name not in locally_deployed:
                 ready_to_launch.append(name)
-        
+
         ## If no agents found anywhere
         if not aws_agents and not local_agents:
             return f"""## Target: No Agents Found
@@ -1064,114 +1155,138 @@ Next Steps:
 - Deploy an agent: `deploy_agentcore_app(agent_file="your_agent.py", execution_mode="sdk")`
 - Check examples: Look for agent files in your project
 """
-        
+
         ## If only local agents and AWS failed, show local-only analysis
         if not aws_agents and local_agents:
-            result_parts = [f"## Target: Local Agents Analysis (AWS Query Failed)"]
-            result_parts.append(f"")
-            result_parts.append(f"Analysis: Local configs only (AWS not accessible)")
-            result_parts.append(f"")
-            
+            result_parts = ['## Target: Local Agents Analysis (AWS Query Failed)']
+            result_parts.append('')
+            result_parts.append('Analysis: Local configs only (AWS not accessible)')
+            result_parts.append('')
+
             if locally_deployed:
-                result_parts.append(f"#### Ready: Deployed Locally ({len(locally_deployed)} agents):")
-                result_parts.append("*These have agent ARNs in local config*")
-                result_parts.append("")
+                result_parts.append(
+                    f'#### Ready: Deployed Locally ({len(locally_deployed)} agents):'
+                )
+                result_parts.append('*These have agent ARNs in local config*')
+                result_parts.append('')
                 for name in locally_deployed:
                     agent_arn = local_agents[name].get('agent_arn', 'unknown')
-                    result_parts.append(f"##### {name}")
-                    result_parts.append(f"- Status: Deployed (has ARN in config) OK")
-                    result_parts.append(f"- ARN: `{agent_arn[:60] if agent_arn else 'unknown'}...`")
-                    result_parts.append(f"- Try Invoke: `invoke_agent(agent_name='{name}', prompt='Hello!')`")
-                    result_parts.append("")
-            
-            not_deployed = [name for name in local_agents if not local_agents[name].get('is_deployed')]
+                    result_parts.append(f'##### {name}')
+                    result_parts.append('- Status: Deployed (has ARN in config) OK')
+                    result_parts.append(
+                        f'- ARN: `{agent_arn[:60] if agent_arn else "unknown"}...`'
+                    )
+                    result_parts.append(
+                        f"- Try Invoke: `invoke_agent(agent_name='{name}', prompt='Hello!')`"
+                    )
+                    result_parts.append('')
+
+            not_deployed = [
+                name for name in local_agents if not local_agents[name].get('is_deployed')
+            ]
             if not_deployed:
-                result_parts.append(f"#### Pending: Not Deployed ({len(not_deployed)} agents):")
+                result_parts.append(f'#### Pending: Not Deployed ({len(not_deployed)} agents):')
                 for name in not_deployed:
                     entrypoint = local_agents[name]['entrypoint']
-                    result_parts.append(f"- {name}: Deploy first `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`")
-            
-            result_parts.append(f"")
-            result_parts.append(f"Note: AWS query failed - showing local config analysis only")
-            return "\\n".join(result_parts)
-        
-        result_parts = [f"## Target: What Agents Can I Invoke?"]
-        result_parts.append(f"")
-        result_parts.append(f"Region: {region}")
-        result_parts.append(f"Analysis: Local configs + AWS deployments")
-        result_parts.append(f"")
-        
+                    result_parts.append(
+                        f"- {name}: Deploy first `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`"
+                    )
+
+            result_parts.append('')
+            result_parts.append('Note: AWS query failed - showing local config analysis only')
+            return '\\n'.join(result_parts)
+
+        result_parts = ['## Target: What Agents Can I Invoke?']
+        result_parts.append('')
+        result_parts.append(f'Region: {region}')
+        result_parts.append('Analysis: Local configs + AWS deployments')
+        result_parts.append('')
+
         ## Category 1: Ready to Invoke (AWS deployed & ready)
         if ready_to_invoke:
-            result_parts.append(f"#### Ready: Ready to Invoke ({len(ready_to_invoke)} agents):")
-            result_parts.append("*These are deployed on AWS and ready for immediate invocation*")
-            result_parts.append("")
+            result_parts.append(f'#### Ready: Ready to Invoke ({len(ready_to_invoke)} agents):')
+            result_parts.append('*These are deployed on AWS and ready for immediate invocation*')
+            result_parts.append('')
             for name in ready_to_invoke:
-                result_parts.append(f"##### {name}")
-                result_parts.append(f"- Status: READY on AWS OK")
+                result_parts.append(f'##### {name}')
+                result_parts.append('- Status: READY on AWS OK')
                 if name in both:
-                    result_parts.append(f"- Config: Local + AWS (synced)")
+                    result_parts.append('- Config: Local + AWS (synced)')
                 else:
-                    result_parts.append(f"- Config: AWS only (deployed elsewhere)")
-                result_parts.append(f"- Invoke: `invoke_agent(agent_name='{name}', prompt='Hello!')`")
-                result_parts.append("")
-        
+                    result_parts.append('- Config: AWS only (deployed elsewhere)')
+                result_parts.append(
+                    f"- Invoke: `invoke_agent(agent_name='{name}', prompt='Hello!')`"
+                )
+                result_parts.append('')
+
         ## Category 2: Ready to Launch (Local config only, not deployed)
         if ready_to_launch:
-            result_parts.append(f"#### Pending: Ready to Launch ({len(ready_to_launch)} agents):")
-            result_parts.append("*These are configured locally but not deployed to AWS*")
-            result_parts.append("")
+            result_parts.append(f'#### Pending: Ready to Launch ({len(ready_to_launch)} agents):')
+            result_parts.append('*These are configured locally but not deployed to AWS*')
+            result_parts.append('')
             for name in ready_to_launch:
                 entrypoint = local_agents[name]['entrypoint']
-                result_parts.append(f"##### {name}")
-                result_parts.append(f"- Status: Configured locally only")
-                result_parts.append(f"- Entrypoint: `{entrypoint}`")
-                result_parts.append(f"- Launch: `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`")
-                result_parts.append(f"- Then Invoke: `invoke_agent(agent_name='{name}', prompt='test')`")
-                result_parts.append("")
-        
+                result_parts.append(f'##### {name}')
+                result_parts.append('- Status: Configured locally only')
+                result_parts.append(f'- Entrypoint: `{entrypoint}`')
+                result_parts.append(
+                    f"- Launch: `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`"
+                )
+                result_parts.append(
+                    f"- Then Invoke: `invoke_agent(agent_name='{name}', prompt='test')`"
+                )
+                result_parts.append('')
+
         ## Category 3: Ready to Update (Both local + AWS but not ready)
         if ready_to_update:
-            result_parts.append(f"#### 🔵 Ready to Update ({len(ready_to_update)} agents):")
-            result_parts.append("*These exist in both local + AWS but may need updating/relaunching*")
-            result_parts.append("")
+            result_parts.append(f'#### 🔵 Ready to Update ({len(ready_to_update)} agents):')
+            result_parts.append(
+                '*These exist in both local + AWS but may need updating/relaunching*'
+            )
+            result_parts.append('')
             for name in ready_to_update:
                 entrypoint = local_agents[name]['entrypoint']
                 aws_status = aws_agents[name]['endpoint_status']
-                result_parts.append(f"##### {name}")
-                result_parts.append(f"- Status: {aws_status} on AWS")
-                result_parts.append(f"- Config: Local + AWS (may be out of sync)")
-                result_parts.append(f"- Update: `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`")
-                result_parts.append(f"- Then Invoke: `invoke_agent(agent_name='{name}', prompt='test')`")
-                result_parts.append("")
-        
+                result_parts.append(f'##### {name}')
+                result_parts.append(f'- Status: {aws_status} on AWS')
+                result_parts.append('- Config: Local + AWS (may be out of sync)')
+                result_parts.append(
+                    f"- Update: `deploy_agentcore_app(agent_file='{entrypoint}', execution_mode='sdk')`"
+                )
+                result_parts.append(
+                    f"- Then Invoke: `invoke_agent(agent_name='{name}', prompt='test')`"
+                )
+                result_parts.append('')
+
         ## AWS-only agents that are not ready
         if aws_not_ready:
-            result_parts.append(f"#### ! AWS Agents Not Ready ({len(aws_not_ready)} agents):")
+            result_parts.append(f'#### ! AWS Agents Not Ready ({len(aws_not_ready)} agents):')
             for name in aws_not_ready:
                 if name in aws_agents:
                     status = aws_agents[name]['endpoint_status']
-                    result_parts.append(f"- {name}: Status {status} (wait or redeploy)")
-            result_parts.append("")
-        
+                    result_parts.append(f'- {name}: Status {status} (wait or redeploy)')
+            result_parts.append('')
+
         ## Summary
-        result_parts.append("#### Stats: Summary:")
+        result_parts.append('#### Stats: Summary:')
         if ready_to_invoke:
-            result_parts.append(f"- Can invoke now: {len(ready_to_invoke)} agents")
+            result_parts.append(f'- Can invoke now: {len(ready_to_invoke)} agents')
         if ready_to_update:
-            result_parts.append(f"- Can update then invoke: {len(ready_to_update)} agents")
+            result_parts.append(f'- Can update then invoke: {len(ready_to_update)} agents')
         if ready_to_launch:
-            result_parts.append(f"- Can launch then invoke: {len(ready_to_launch)} agents")
-        
+            result_parts.append(f'- Can launch then invoke: {len(ready_to_launch)} agents')
+
         if ready_to_invoke:
-            result_parts.append(f"")
-            result_parts.append(f"Launch: Quick Test: `invoke_agent(agent_name='{ready_to_invoke[0]}', prompt='Hello!')`")
-        
-        return "\\n".join(result_parts)
-        
+            result_parts.append('')
+            result_parts.append(
+                f"Launch: Quick Test: `invoke_agent(agent_name='{ready_to_invoke[0]}', prompt='Hello!')`"
+            )
+
+        return '\\n'.join(result_parts)
+
     except ImportError:
         return """Boto3 Not Available
-        
+
 Install boto3: `pip install boto3` or `uv add boto3`
 Purpose: Query actual AWS deployed agents (source of truth)
 Benefit: See real deployments vs potentially stale local YAML files
@@ -1179,7 +1294,7 @@ Benefit: See real deployments vs potentially stale local YAML files
     except Exception as e:
         ## Fallback to local-only analysis if everything fails
         return f"""Tool Error: {str(e)[:200]}...
-        
+
 Fallback: Try local analysis only:
 - `discover_existing_agents()` for local configs
 - `invoke_agent(agent_name='agent_name', prompt='test')` to test specific agents
@@ -1187,37 +1302,45 @@ Fallback: Try local analysis only:
 AWS Setup: `aws configure` or check credentials
 """
 
-def _project_discover_impl(action: str = "agents", search_path: str = ".") -> str:
-    """
-    Search: CONSOLIDATED PROJECT DISCOVERY
-    
+
+def project_discover(action: str = 'agents', search_path: str = '.') -> str:
+    """Search: CONSOLIDATED PROJECT DISCOVERY.
+
     Single tool for ALL discovery operations in your project.
-    
+
     Actions:
     - agents: Find agent files
     - configs: Find AgentCore configurations
     - memories: Find memory resources
     - all: Complete project scan
     """
-    
     try:
         search_path = Path(search_path).absolute()
-        
-        if action == "agents":
+
+        if action == 'agents':
             ## Find potential agent files
-            agent_patterns = ["**/*agent*.py", "agent.py", "main.py", "**/*strands*.py", "**/*langchain*.py", "**/*langgraph*.py", "**/*crew*.py"]
+            agent_patterns = [
+                '**/*agent*.py',
+                '/agent.py',
+                '/main.py',
+                '**/*strands*.py',
+                '**/*langchain*.py',
+            ]
             agent_files = []
-            
+
             for pattern in agent_patterns:
                 files = list(search_path.glob(pattern))
                 agent_files.extend([f for f in files if f not in agent_files])
-            
+
             ## Filter out AgentCore files and test files
             filtered_files = [
-                f for f in agent_files 
-                if not f.name.endswith('_agentcore.py') and 'agentcore_' not in f.name and 'test_' not in f.name
+                f
+                for f in agent_files
+                if not f.name.endswith('_agentcore.py')
+                and 'agentcore_' not in f.name
+                and 'test_' not in f.name
             ]
-            
+
             if not filtered_files:
                 return f"""## Search: No Agent Files Found
 
@@ -1232,37 +1355,40 @@ Next Steps:
 - Check different directory: `project_discover(action="agents", search_path="other/path")`
 - Create new agent or place existing agent files in this directory
 """
-            
+
             ## Analyze found files
             analyzed_files = []
             for file_path in filtered_files:
                 try:
                     with open(file_path, 'r') as f:
                         content = f.read()
-                    
-                    framework = "Custom"
-                    if "from strands import" in content:
-                        framework = "Strands"
-                    elif "langgraph" in content.lower():
-                        framework = "LangGraph"
-                    elif "langchain" in content.lower():
-                        framework = "LangChain"
-                    
-                    has_agentcore = "BedrockAgentCoreApp" in content
-                    
-                    analyzed_files.append({
-                        'path': file_path.relative_to(search_path),
-                        'framework': framework,
-                        'agentcore': has_agentcore
-                    })
-                except:
+
+                    framework = 'Custom'
+                    if 'from strands import' in content:
+                        framework = 'Strands'
+                    elif 'langgraph' in content.lower():
+                        framework = 'LangGraph'
+                    elif 'langchain' in content.lower():
+                        framework = 'LangChain'
+
+                    has_agentcore = 'BedrockAgentCoreApp' in content
+
+                    analyzed_files.append(
+                        {
+                            'path': file_path.relative_to(search_path),
+                            'framework': framework,
+                            'agentcore': has_agentcore,
+                        }
+                    )
+                except Exception as e:
+                    print(f'Error processing {file_path}: {e}')
                     continue
-            
+
             files_list = []
             for file_info in analyzed_files:
-                status = "OK AgentCore" if file_info['agentcore'] else "X Needs transform"
-                files_list.append(f"- {file_info['path']} ({file_info['framework']}) - {status}")
-            
+                status = 'OK AgentCore' if file_info['agentcore'] else 'X Needs transform'
+                files_list.append(f'- {file_info["path"]} ({file_info["framework"]}) - {status}')
+
             return f"""## Search: Agent Files Discovered
 
 Search Path: `{search_path}`
@@ -1274,11 +1400,11 @@ Found: {len(analyzed_files)} agent files
 - Transform agent: `transform_to_agentcore(source_file="path/to/agent.py")`
 - Deploy agent: `deploy_agentcore_app(app_file="path/to/agent.py", agent_name="my_agent", execution_mode="sdk")`
 """
-        
-        elif action == "configs":
+
+        elif action == 'configs':
             ## Find AgentCore configuration files with status checking
-            config_files = list(search_path.glob("**/.bedrock_agentcore.yaml"))
-            
+            config_files = list(search_path.glob('**/.bedrock_agentcore.yaml'))
+
             if not config_files:
                 return f"""## Config: No AgentCore Configurations Found
 
@@ -1289,9 +1415,9 @@ What this means:
 - Use `deploy_agentcore_app()` to deploy agents
 - Use `project_discover(action="agents")` to find agent files
 """
-            
+
             discovered_agents = []
-            
+
             for config_file in config_files:
                 try:
                     if YAML_AVAILABLE:
@@ -1303,32 +1429,47 @@ What this means:
                                     for agent_name, agent_config in config['agents'].items():
                                         agent_info = {
                                             'name': agent_name,
-                                            'config_file': str(config_file.relative_to(search_path)),
-                                            'entrypoint': agent_config.get('entrypoint', 'unknown'),
-                                            'region': agent_config.get('aws', {}).get('region', 'us-east-1'),
-                                            'status': 'CONFIGURED'
+                                            'config_file': str(
+                                                config_file.relative_to(search_path)
+                                            ),
+                                            'entrypoint': agent_config.get(
+                                                'entrypoint', 'unknown'
+                                            ),
+                                            'region': agent_config.get('aws', {}).get(
+                                                'region', 'us-east-1'
+                                            ),
+                                            'status': 'CONFIGURED',
                                         }
-                                        
+
                                         ## Check agent status if SDK available
                                         if RUNTIME_AVAILABLE:
                                             try:
                                                 original_cwd = Path.cwd()
                                                 import os
+
                                                 os.chdir(config_file.parent)
-                                                
+
                                                 runtime = get_runtime_for_agent(agent_name)
                                                 status_result = runtime.status()
-                                                
+
                                                 if hasattr(status_result, 'endpoint'):
-                                                    agent_info['status'] = status_result.endpoint.get('status', 'UNKNOWN')
+                                                    agent_info['status'] = (
+                                                        status_result.endpoint.get(
+                                                            'status', 'UNKNOWN'
+                                                        )
+                                                    )
                                                 else:
-                                                    agent_info['status'] = 'CONFIGURED_NOT_DEPLOYED'
-                                                    
+                                                    agent_info['status'] = (
+                                                        'CONFIGURED_NOT_DEPLOYED'
+                                                    )
+
                                                 os.chdir(original_cwd)
-                                                
+
                                             except ValueError as e:
-                                                if "Must configure" in str(e):
-                                                    agent_info['status'] = 'CONFIGURED_NOT_DEPLOYED'
+                                                if 'Must configure' in str(e):
+                                                    agent_info['status'] = (
+                                                        'CONFIGURED_NOT_DEPLOYED'
+                                                    )
                                                 else:
                                                     agent_info['status'] = 'ERROR'
                                             except Exception:
@@ -1336,11 +1477,12 @@ What this means:
                                             finally:
                                                 try:
                                                     os.chdir(original_cwd)
-                                                except:
+                                                except Exception as e:
+                                                    print(f'Error changing directory: {e}')
                                                     pass
-                                        
+
                                         discovered_agents.append(agent_info)
-                                        
+
                                 ## Handle simple agent config format
                                 elif 'agent_name' in config:
                                     agent_info = {
@@ -1348,12 +1490,12 @@ What this means:
                                         'config_file': str(config_file.relative_to(search_path)),
                                         'entrypoint': config.get('entrypoint', 'unknown'),
                                         'region': config.get('region', 'us-east-1'),
-                                        'status': 'CONFIGURED'
+                                        'status': 'CONFIGURED',
                                     }
                                     discovered_agents.append(agent_info)
                 except Exception:
                     continue
-            
+
             if not discovered_agents:
                 return f"""## Config: Config Files Found But Invalid
 
@@ -1363,64 +1505,81 @@ Config Files: {len(config_files)}
 Issue: Config files exist but contain invalid configurations
 Next Steps: Use `deploy_agentcore_app()` to create new valid configurations
 """
-            
+
             ## Categorize agents by status
             ready_agents = [a for a in discovered_agents if a['status'] == 'READY']
-            configured_agents = [a for a in discovered_agents if 'CONFIGURED' in a['status'] or a['status'] == 'CREATING']
+            configured_agents = [
+                a
+                for a in discovered_agents
+                if 'CONFIGURED' in a['status'] or a['status'] == 'CREATING'
+            ]
             error_agents = [a for a in discovered_agents if a['status'] in ['ERROR', 'UNKNOWN']]
-            
-            result_parts = [f"## Config: AgentCore Configurations Discovered"]
-            result_parts.append(f"")
-            result_parts.append(f"Search Path: `{search_path}`")
-            result_parts.append(f"Total Agents: {len(discovered_agents)}")
-            result_parts.append(f"")
-            
+
+            result_parts = ['## Config: AgentCore Configurations Discovered']
+            result_parts.append('')
+            result_parts.append(f'Search Path: `{search_path}`')
+            result_parts.append(f'Total Agents: {len(discovered_agents)}')
+            result_parts.append('')
+
             if ready_agents:
-                result_parts.append(f"#### Ready: Ready to Invoke ({len(ready_agents)} agents):")
+                result_parts.append(f'#### Ready: Ready to Invoke ({len(ready_agents)} agents):')
                 for agent in ready_agents:
-                    result_parts.append(f"##### {agent['name']}")
-                    result_parts.append(f"- Status: READY OK")
-                    result_parts.append(f"- Config: `{agent['config_file']}`")
-                    result_parts.append(f"- Invoke: `invoke_agent(agent_name='{agent['name']}', prompt='test')`")
-                    result_parts.append("")
-            
+                    result_parts.append(f'##### {agent["name"]}')
+                    result_parts.append('- Status: READY OK')
+                    result_parts.append(f'- Config: `{agent["config_file"]}`')
+                    result_parts.append(
+                        f"- Invoke: `invoke_agent(agent_name='{agent['name']}', prompt='test')`"
+                    )
+                    result_parts.append('')
+
             if configured_agents:
-                result_parts.append(f"#### Pending: Configured But Not Deployed ({len(configured_agents)} agents):")
+                result_parts.append(
+                    f'#### Pending: Configured But Not Deployed ({len(configured_agents)} agents):'
+                )
                 for agent in configured_agents:
-                    result_parts.append(f"##### {agent['name']}")
-                    result_parts.append(f"- Status: {agent['status']}")
-                    result_parts.append(f"- Config: `{agent['config_file']}`")
-                    result_parts.append(f"- Deploy: `deploy_agentcore_app(app_file='{agent['entrypoint']}', agent_name='{agent['name']}', execution_mode='sdk')`")
-                    result_parts.append("")
-            
+                    result_parts.append(f'##### {agent["name"]}')
+                    result_parts.append(f'- Status: {agent["status"]}')
+                    result_parts.append(f'- Config: `{agent["config_file"]}`')
+                    result_parts.append(
+                        f"- Deploy: `deploy_agentcore_app(app_file='{agent['entrypoint']}', agent_name='{agent['name']}', execution_mode='sdk')`"
+                    )
+                    result_parts.append('')
+
             if error_agents:
-                result_parts.append(f"#### Error: Agents with Issues ({len(error_agents)} agents):")
+                result_parts.append(
+                    f'#### Error: Agents with Issues ({len(error_agents)} agents):'
+                )
                 for agent in error_agents:
-                    result_parts.append(f"##### {agent['name']}")
-                    result_parts.append(f"- Status: {agent['status']}")
-                    result_parts.append(f"- Config: `{agent['config_file']}`")
-                    result_parts.append("")
-            
-            result_parts.append("#### Quick Actions:")
+                    result_parts.append(f'##### {agent["name"]}')
+                    result_parts.append(f'- Status: {agent["status"]}')
+                    result_parts.append(f'- Config: `{agent["config_file"]}`')
+                    result_parts.append('')
+
+            result_parts.append('#### Quick Actions:')
             if ready_agents:
-                result_parts.append(f"- Test Ready Agent: `invoke_agent(agent_name='{ready_agents[0]['name']}', prompt='Hello!')`")
+                result_parts.append(
+                    f"- Test Ready Agent: `invoke_agent(agent_name='{ready_agents[0]['name']}', prompt='Hello!')`"
+                )
             if configured_agents:
-                result_parts.append(f"- Deploy Agent: `deploy_agentcore_app(app_file='{configured_agents[0]['entrypoint']}', agent_name='{configured_agents[0]['name']}', execution_mode='sdk')`")
-            
-            return "\\n".join(result_parts)
-        
-        elif action == "memories":
+                result_parts.append(
+                    f"- Deploy Agent: `deploy_agentcore_app(app_file='{configured_agents[0]['entrypoint']}', agent_name='{configured_agents[0]['name']}', execution_mode='sdk')`"
+                )
+
+            return '\\n'.join(result_parts)
+
+        elif action == 'memories':
             if not SDK_AVAILABLE:
-                return f"SDK Not Available: Cannot check memory resources without AgentCore SDK"
-            
+                return 'SDK Not Available: Cannot check memory resources without AgentCore SDK'
+
             try:
                 from bedrock_agentcore.memory import MemoryClient
+
                 memory_client = MemoryClient()
-                
+
                 memories = memory_client.list_memories(max_results=50)
-                
+
                 if not memories:
-                    return f"""## Memory: No Memory Resources Found
+                    return """## Memory: No Memory Resources Found
 
 No AgentCore memory resources found in your AWS account.
 
@@ -1428,14 +1587,14 @@ Next Steps:
 - Create memory: Use memory management tools
 - Setup memory for agent: Integrate memory into agent deployment
 """
-                
+
                 memory_list = []
                 for memory in memories:
-                    memory_id = memory.get('memoryId', 'unknown')[:20] + "..."
+                    memory_id = memory.get('memoryId', 'unknown')[:20] + '...'
                     name = memory.get('name', 'unnamed')
                     status = memory.get('status', 'unknown')
-                    memory_list.append(f"- {name} ({memory_id}) - {status}")
-                
+                    memory_list.append(f'- {name} ({memory_id}) - {status}')
+
                 return f"""## Memory: Memory Resources Found
 
 Found: {len(memories)} memory resources
@@ -1447,14 +1606,14 @@ Found: {len(memories)} memory resources
 - Setup with agent: Integrate memory with agents
 """
             except Exception as e:
-                return f"Memory Discovery Error: {str(e)}"
-        
-        elif action == "all":
+                return f'Memory Discovery Error: {str(e)}'
+
+        elif action == 'all':
             ## Complete project scan
-            agents_result = _project_discover_impl(action="agents", search_path=str(search_path))
-            configs_result = _project_discover_impl(action="configs", search_path=str(search_path))
-            memories_result = _project_discover_impl(action="memories", search_path=str(search_path))
-            
+            agents_result = project_discover(action='agents', search_path=str(search_path))
+            configs_result = project_discover(action='configs', search_path=str(search_path))
+            memories_result = project_discover(action='memories', search_path=str(search_path))
+
             return f"""## Search: Complete Project Discovery
 
 Search Path: `{search_path}`
@@ -1478,49 +1637,53 @@ Search Path: `{search_path}`
 - Check existing configurations with `get_agent_status`
 - Manage memory resources with memory tools
 """
-        
+
         else:
             return f"""Unknown Action: `{action}`
 
 Available Actions:
 - `agents` - Find agent files
 - `configs` - Find AgentCore configurations
-- `memories` - Find memory resources  
+- `memories` - Find memory resources
 - `all` - Complete project scan
 
 Example: `project_discover(action="agents")`
 """
-        
+
     except Exception as e:
-        return f"Discovery Error: {str(e)}"
+        return f'Discovery Error: {str(e)}'
+
 
 ## ============================================================================
 ## MCP TOOL REGISTRATION FOR DISCOVERY FUNCTIONS
 ## ============================================================================
 
+
 def register_discovery_tools(mcp: FastMCP):
     """Register enhanced agent discovery and runtime management tools."""
+
     @mcp.tool()
     async def get_agent_logs(
-        agent_name: str = Field(description="Name of the deployed agent"),
-        hours_back: int = Field(default=1, description="Hours of logs to retrieve (default: 1)"),
-        max_events: int = Field(default=50, description="Maximum number of log events (default: 50)"),
-        error_only: bool = Field(default=False, description="Only show error/exception logs"),
-        region: str = Field(default="us-east-1", description="AWS region")
+        agent_name: str = Field(description='Name of the deployed agent'),
+        hours_back: int = Field(default=1, description='Hours of logs to retrieve (default: 1)'),
+        max_events: int = Field(
+            default=50, description='Maximum number of log events (default: 50)'
+        ),
+        error_only: bool = Field(default=False, description='Only show error/exception logs'),
+        region: str = Field(default='us-east-1', description='AWS region'),
     ) -> str:
         """Get CloudWatch logs for an AgentCore agent runtime for troubleshooting."""
-        
         try:
             import boto3
             from datetime import datetime, timedelta
-            
+
             # First, get the agent runtime ID from the control plane
             control_client = boto3.client('bedrock-agentcore-control', region_name=region)
             agents = control_client.list_agent_runtimes(maxResults=50)
-            
+
             agent_runtime_id = None
             agent_arn = None
-            
+
             for agent in agents.get('agentRuntimes', []):
                 if agent.get('agentRuntimeName', agent.get('name')) == agent_name:
                     agent_arn = agent.get('agentRuntimeArn', '')
@@ -1529,7 +1692,7 @@ def register_discovery_tools(mcp: FastMCP):
                         # ARN format: arn:aws:bedrock-agentcore:region:account:runtime/runtime-id
                         agent_runtime_id = agent_arn.split('/')[-1]
                     break
-            
+
             if not agent_runtime_id:
                 return f"""# Agent Logs - Agent Not Found
 
@@ -1537,21 +1700,20 @@ Agent: {agent_name}
 Status: Not found in deployed agents
 
 Use project_discover with action 'aws' to see available agents."""
-            
+
             # Construct log group name (pattern: /aws/bedrock-agentcore/runtimes/{runtime-id}-{endpoint})
-            endpoint_name = "DEFAULT"  # Most common endpoint name
-            log_group_name = f"/aws/bedrock-agentcore/runtimes/{agent_runtime_id}-{endpoint_name}"
-            
+            endpoint_name = 'DEFAULT'  # Most common endpoint name
+            log_group_name = f'/aws/bedrock-agentcore/runtimes/{agent_runtime_id}-{endpoint_name}'
+
             # Create CloudWatch Logs client
             logs_client = boto3.client('logs', region_name=region)
-            
+
             # Check if log group exists
             try:
                 logs_response = logs_client.describe_log_groups(
-                    logGroupNamePrefix=log_group_name,
-                    limit=1
+                    logGroupNamePrefix=log_group_name, limit=1
                 )
-                
+
                 if not logs_response.get('logGroups'):
                     return f"""# Agent Logs - Log Group Not Found
 
@@ -1564,7 +1726,7 @@ This could mean:
 - Agent hasn't been invoked yet
 - Different endpoint name (try invoking the agent first)
 - Agent deployment issue"""
-                    
+
             except Exception as e:
                 return f"""# Agent Logs - Access Error
 
@@ -1574,29 +1736,29 @@ Log Group: {log_group_name}
 Error: {str(e)}
 
 Check AWS permissions for CloudWatch Logs access."""
-            
+
             # Calculate time range
             end_time = datetime.now()
             start_time = end_time - timedelta(hours=hours_back)
-            
+
             # Get log events
             filter_pattern = None
             if error_only:
-                filter_pattern = "?ERROR ?Exception ?Failed ?Traceback"
-            
+                filter_pattern = '?ERROR ?Exception ?Failed ?Traceback'
+
             try:
                 events_response = logs_client.filter_log_events(
                     logGroupName=log_group_name,
                     filterPattern=filter_pattern,
                     startTime=int(start_time.timestamp() * 1000),
                     endTime=int(end_time.timestamp() * 1000),
-                    limit=max_events
+                    limit=max_events,
                 )
-                
+
                 events = events_response.get('events', [])
-                
+
                 if not events:
-                    status_msg = "No error logs found" if error_only else "No logs found"
+                    status_msg = 'No error logs found' if error_only else 'No logs found'
                     return f"""# Agent Logs - No Events
 
 Agent: {agent_name}
@@ -1609,18 +1771,18 @@ Try:
 - Increasing hours_back parameter
 - Invoking the agent to generate logs
 - Setting error_only=False to see all logs"""
-                
+
                 # Format log events
                 log_lines = []
                 for event in events:
-                    timestamp = datetime.fromtimestamp(event['timestamp']/1000)
+                    timestamp = datetime.fromtimestamp(event['timestamp'] / 1000)
                     message = event['message'].strip()
-                    log_lines.append(f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {message}")
-                
+                    log_lines.append(f'[{timestamp.strftime("%Y-%m-%d %H:%M:%S")}] {message}')
+
                 # Get log group info
                 log_group = logs_response['logGroups'][0]
-                created_time = datetime.fromtimestamp(log_group['creationTime']/1000)
-                
+                created_time = datetime.fromtimestamp(log_group['creationTime'] / 1000)
+
                 return f"""# Agent Logs
 
 ## Agent Info:
@@ -1631,7 +1793,7 @@ Try:
 
 ## Query Info:
 - Time Range: {start_time.strftime('%Y-%m-%d %H:%M')} - {end_time.strftime('%Y-%m-%d %H:%M')}
-- Filter: {"Errors only" if error_only else "All logs"}
+- Filter: {'Errors only' if error_only else 'All logs'}
 - Events Found: {len(events)}
 
 ## Log Events:
@@ -1643,7 +1805,7 @@ Try:
 - If no logs appear, try invoking the agent first
 - For deployment issues, check agent configuration
 - For runtime errors, review the error messages above"""
-                
+
             except Exception as e:
                 return f"""# Agent Logs - Retrieval Error
 
@@ -1656,115 +1818,114 @@ This could indicate:
 - CloudWatch Logs permission issues
 - Log group access restrictions
 - Network connectivity issues"""
-                
+
         except Exception as e:
-            return f"Agent Logs Error: {str(e)}"
-        
+            return f'Agent Logs Error: {str(e)}'
+
     @mcp.tool()
-    async def what_agents_can_i_invoke(
-        region: str = "us-east-1"
-    ) -> str:
-        """
-        Target: WHAT AGENTS CAN I INVOKE?
-        
+    async def invokable_agents(region: str = 'us-east-1') -> str:
+        """Target: WHAT AGENTS CAN I INVOKE?
+
         Combining local YAML configs with actual AWS deployments.
         Shows exactly what you can invoke, launch, or update with specific agent names.
-        
+
         Categories:
         - Ready: Ready to Invoke: Deployed on AWS (invoke immediately)
         - Pending: Ready to Launch: Local config only (launch then invoke)
         - 🔵 Ready to Update: Both local + AWS but not ready
         """
         return what_agents_can_i_invoke(region)
-    
+
     @mcp.tool()
     async def project_discover(
-        action: str = "agents",  ## "agents", "configs", "memories", "all"
-        search_path: str = "."
+        action: str = 'agents',  ## "agents", "configs", "memories", "all"
+        search_path: str = '.',
     ) -> str:
-        """
-        Search: CONSOLIDATED PROJECT DISCOVERY
-        
+        """Search: CONSOLIDATED PROJECT DISCOVERY.
+
         Single tool for ALL discovery operations in your project.
-        
+
         Actions:
         - agents: Find agent files
-        - configs: Find AgentCore configurations  
+        - configs: Find AgentCore configurations
         - memories: Find memory resources
         - all: Complete project scan
-        
+
         Examples:
         - project_discover()  ## Find agents
         - project_discover(action="all")  ## Complete scan
         """
-        return _project_discover_impl(action, search_path)
+        return project_discover(action, search_path)
+
 
 ## ============================================================================
 ## GITHUB EXAMPLES DISCOVERY (DYNAMIC)
 ## ============================================================================
 
+
 def discover_agentcore_examples_from_github(
-    query: str = "",
-    category: str = "all",  ## "all", "tutorials", "use-cases", "integrations"
-    format_type: str = "all"  ## "all", "python", "jupyter", "docker"
+    query: str = '',
+    category: str = 'all',  ## "all", "tutorials", "use-cases", "integrations"
+    format_type: str = 'all',  ## "all", "python", "jupyter", "docker"
 ) -> str:
-    """
-    Search: DISCOVER AGENTCORE EXAMPLES FROM GITHUB
-    
+    """Search: DISCOVER AGENTCORE EXAMPLES FROM GITHUB.
+
     Dynamically discovers working examples from amazon-bedrock-agentcore-samples repository.
     Always up-to-date with the latest samples and use cases.
-    
+
     Examples:
     - discover_agentcore_examples_from_github(query="oauth")  ## Find OAuth examples
-    - discover_agentcore_examples_from_github(query="memory integration")  ## Memory examples  
+    - discover_agentcore_examples_from_github(query="memory integration")  ## Memory examples
     - discover_agentcore_examples_from_github(category="tutorials")  ## Beginner examples
     """
-    
     try:
         import requests
         import time
         from dataclasses import dataclass
         from typing import Dict, List, Optional
-        
+
         @dataclass
         class ExampleMetadata:
             name: str
             path: str
             description: str
-            use_case: str = ""
-            framework: str = ""
-            level: str = ""
+            use_case: str = ''
+            framework: str = ''
+            level: str = ''
             components: List[str] = None
-            format_type: str = ""
-            github_url: str = ""
+            format_type: str = ''
+            github_url: str = ''
             metadata: Dict[str, str] = None
-            
+
             def __post_init__(self):
                 if self.components is None:
                     self.components = []
                 if self.metadata is None:
                     self.metadata = {}
-        
+
         ## GitHub URLs
-        base_url = "https://api.github.com/repos/awslabs/amazon-bedrock-agentcore-samples"
-        raw_base_url = "https://raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/main"
-        web_base_url = "https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main"
-        
+        base_url = 'https://api.github.com/repos/awslabs/amazon-bedrock-agentcore-samples'
+        raw_base_url = (
+            'https://raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/main'
+        )
+        web_base_url = 'https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main'
+
         ## Simple cache (in real implementation, use proper caching)
         cache = {}
-        
+
         def github_search_api_with_cli(query_terms: List[str]) -> List[Dict]:
-            """Use GitHub CLI for authenticated search API access"""
+            """Use GitHub CLI for authenticated search API access."""
             try:
-                import subprocess
                 import json
-                
+                import subprocess
+
                 search_results = []
-                
+
                 # Check if GitHub CLI is available and authenticated
                 try:
-                    result = subprocess.run(['gh', 'auth', 'status'], 
-                                          capture_output=True, text=True, timeout=5)
+                    result = subprocess.run(
+                        ['gh', 'auth', 'status'], capture_output=True, text=True, timeout=5
+                    )
                     if result.returncode != 0:
                         # Not authenticated - return special indicator
                         return [{'auth_required': True, 'gh_available': True}]
@@ -1773,218 +1934,300 @@ def discover_agentcore_examples_from_github(
                     return [{'auth_required': True, 'gh_available': False}]
                 except subprocess.TimeoutExpired:
                     return []  # Fall back silently on timeout
-                
+
                 # Search for README files with query terms
-                readme_query = f"{' '.join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples"
+                readme_query = f'{" ".join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples'
                 try:
-                    result = subprocess.run([
-                        'gh', 'api', f'/search/code?q={requests.utils.quote(readme_query)}'
-                    ], capture_output=True, text=True, timeout=15)
-                    
+                    result = subprocess.run(
+                        ['gh', 'api', f'/search/code?q={requests.utils.quote(readme_query)}'],
+                        capture_output=True,
+                        text=True,
+                        timeout=15,
+                    )
+
                     if result.returncode == 0:
                         data = json.loads(result.stdout)
                         for item in data.get('items', []):
                             path = item.get('path', '')
                             # Extract section and example name from path like "01-tutorials/04-AgentCore-memory/README.md"
                             path_parts = path.split('/')
-                            if len(path_parts) >= 3 and path_parts[0] in ['01-tutorials', '02-use-cases', '03-integrations']:
+                            if len(path_parts) >= 3 and path_parts[0] in [
+                                '01-tutorials',
+                                '02-use-cases',
+                                '03-integrations',
+                            ]:
                                 section = path_parts[0]
                                 example_name = path_parts[1]
-                                search_results.append({
-                                    'section': section,
-                                    'name': example_name,
-                                    'relevance': 'high',
-                                    'match_path': path
-                                })
+                                search_results.append(
+                                    {
+                                        'section': section,
+                                        'name': example_name,
+                                        'relevance': 'high',
+                                        'match_path': path,
+                                    }
+                                )
                 except (subprocess.TimeoutExpired, json.JSONDecodeError):
                     pass
-                
+
                 # Search for code files with individual terms
                 for term in query_terms:
                     if len(term) > 2:  # Avoid single character searches
-                        file_query = f"{term} repo:awslabs/amazon-bedrock-agentcore-samples"
+                        file_query = f'{term} repo:awslabs/amazon-bedrock-agentcore-samples'
                         try:
-                            result = subprocess.run([
-                                'gh', 'api', f'/search/code?q={requests.utils.quote(file_query)}'
-                            ], capture_output=True, text=True, timeout=15)
-                            
+                            result = subprocess.run(
+                                [
+                                    'gh',
+                                    'api',
+                                    f'/search/code?q={requests.utils.quote(file_query)}',
+                                ],
+                                capture_output=True,
+                                text=True,
+                                timeout=15,
+                            )
+
                             if result.returncode == 0:
                                 data = json.loads(result.stdout)
                                 for item in data.get('items', []):
                                     path = item.get('path', '')
                                     path_parts = path.split('/')
-                                    if len(path_parts) >= 2 and path_parts[0] in ['01-tutorials', '02-use-cases', '03-integrations']:
+                                    if len(path_parts) >= 2 and path_parts[0] in [
+                                        '01-tutorials',
+                                        '02-use-cases',
+                                        '03-integrations',
+                                    ]:
                                         section = path_parts[0]
-                                        example_name = path_parts[1] if len(path_parts) > 1 else 'unknown'
-                                        
+                                        example_name = (
+                                            path_parts[1] if len(path_parts) > 1 else 'unknown'
+                                        )
+
                                         # Avoid duplicates
-                                        if not any(r['section'] == section and r['name'] == example_name for r in search_results):
-                                            search_results.append({
-                                                'section': section,
-                                                'name': example_name,
-                                                'relevance': 'medium',
-                                                'match_path': path
-                                            })
+                                        if not any(
+                                            r['section'] == section and r['name'] == example_name
+                                            for r in search_results
+                                        ):
+                                            search_results.append(
+                                                {
+                                                    'section': section,
+                                                    'name': example_name,
+                                                    'relevance': 'medium',
+                                                    'match_path': path,
+                                                }
+                                            )
                         except (subprocess.TimeoutExpired, json.JSONDecodeError):
                             continue
-                
+
                 # Search for specific combinations
                 if len(query_terms) >= 2:
-                    combined_query = f"{' '.join(query_terms)} repo:awslabs/amazon-bedrock-agentcore-samples"
+                    combined_query = (
+                        f'{" ".join(query_terms)} repo:awslabs/amazon-bedrock-agentcore-samples'
+                    )
                     try:
-                        result = subprocess.run([
-                            'gh', 'api', f'/search/code?q={requests.utils.quote(combined_query)}'
-                        ], capture_output=True, text=True, timeout=15)
-                        
+                        result = subprocess.run(
+                            [
+                                'gh',
+                                'api',
+                                f'/search/code?q={requests.utils.quote(combined_query)}',
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=15,
+                        )
+
                         if result.returncode == 0:
                             data = json.loads(result.stdout)
                             for item in data.get('items', []):
                                 path = item.get('path', '')
                                 path_parts = path.split('/')
-                                if len(path_parts) >= 2 and path_parts[0] in ['01-tutorials', '02-use-cases', '03-integrations']:
+                                if len(path_parts) >= 2 and path_parts[0] in [
+                                    '01-tutorials',
+                                    '02-use-cases',
+                                    '03-integrations',
+                                ]:
                                     section = path_parts[0]
-                                    example_name = path_parts[1] if len(path_parts) > 1 else 'unknown'
-                                    
+                                    example_name = (
+                                        path_parts[1] if len(path_parts) > 1 else 'unknown'
+                                    )
+
                                     # Avoid duplicates, but boost relevance for combined matches
-                                    existing = next((r for r in search_results if r['section'] == section and r['name'] == example_name), None)
+                                    existing = next(
+                                        (
+                                            r
+                                            for r in search_results
+                                            if r['section'] == section
+                                            and r['name'] == example_name
+                                        ),
+                                        None,
+                                    )
                                     if existing:
                                         existing['relevance'] = 'very_high'
                                     else:
-                                        search_results.append({
-                                            'section': section,
-                                            'name': example_name,
-                                            'relevance': 'high',
-                                            'match_path': path
-                                        })
+                                        search_results.append(
+                                            {
+                                                'section': section,
+                                                'name': example_name,
+                                                'relevance': 'high',
+                                                'match_path': path,
+                                            }
+                                        )
                     except (subprocess.TimeoutExpired, json.JSONDecodeError):
                         pass
-                
+
                 # Sort by relevance and return
                 relevance_order = {'very_high': 0, 'high': 1, 'medium': 2}
                 search_results.sort(key=lambda x: relevance_order.get(x['relevance'], 3))
-                
+
                 return search_results[:15]  # Limit results to avoid too many API calls
-                
-            except Exception as e:
+
+            except Exception:
                 return []
 
         def github_search_api(query_terms: List[str]) -> List[Dict]:
-            """Try GitHub's search API - first with CLI auth, then fallback"""
+            """Try GitHub's search API - first with CLI auth, then fallback."""
             # Try authenticated search with GitHub CLI first
             results = github_search_api_with_cli(query_terms)
             if results:
                 return results
-            
+
             # Fallback to unauthenticated approach (will likely fail but worth trying)
             try:
                 search_results = []
-                
+
                 # Try code search in README files specifically
-                readme_query = f"{' '.join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples"
-                search_url = f"https://api.github.com/search/code?q={requests.utils.quote(readme_query)}"
-                
+                readme_query = f'{" ".join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples'
+                search_url = (
+                    f'https://api.github.com/search/code?q={requests.utils.quote(readme_query)}'
+                )
+
                 time.sleep(0.5)  # Rate limit protection
                 response = requests.get(search_url, timeout=10)
-                
+
                 if response.status_code == 200:
                     data = response.json()
                     for item in data.get('items', []):
                         path = item.get('path', '')
                         path_parts = path.split('/')
-                        if len(path_parts) >= 3 and path_parts[0] in ['01-tutorials', '02-use-cases', '03-integrations']:
+                        if len(path_parts) >= 3 and path_parts[0] in [
+                            '01-tutorials',
+                            '02-use-cases',
+                            '03-integrations',
+                        ]:
                             section = path_parts[0]
                             example_name = path_parts[1]
-                            search_results.append({
-                                'section': section,
-                                'name': example_name,
-                                'relevance': 'high'
-                            })
-                
+                            search_results.append(
+                                {'section': section, 'name': example_name, 'relevance': 'high'}
+                            )
+
                 return search_results[:15]
-                
-            except Exception as e:
+
+            except Exception:
                 return []
 
         def fetch_repository_structure() -> Dict[str, List[str]]:
-            """Fetch the repository structure organized by section"""
-            
+            """Fetch the repository structure organized by section."""
             if 'structure' in cache:
                 return cache['structure']
-            
+
             try:
                 time.sleep(0.5)  ## Rate limit protection
-                
-                response = requests.get(f"{base_url}/contents", timeout=10)
+
+                response = requests.get(f'{base_url}/contents', timeout=10)
                 response.raise_for_status()
-                
+
                 main_contents = response.json()
                 structure = {}
-                
+
                 target_dirs = ['01-tutorials', '02-use-cases', '03-integrations']
-                
+
                 for item in main_contents:
                     if item['type'] == 'dir' and item['name'] in target_dirs:
                         dir_name = item['name']
-                        
+
                         time.sleep(0.5)  ## Rate limit protection
-                        dir_response = requests.get(f"{base_url}/contents/{dir_name}", timeout=10)
+                        dir_response = requests.get(f'{base_url}/contents/{dir_name}', timeout=10)
                         if dir_response.status_code == 200:
                             dir_contents = dir_response.json()
-                            
+
                             examples = []
                             for subitem in dir_contents:
                                 if subitem['type'] == 'dir':
                                     examples.append(subitem['name'])
-                            
+
                             structure[dir_name] = examples
-                
+
                 cache['structure'] = structure
                 return structure
-                
-            except requests.RequestException as e:
+
+            except requests.RequestException:
                 return {}
-        
+
         def extract_metadata_from_readme(readme_content: str) -> Dict[str, str]:
-            """Extract metadata from README content with enhanced table parsing"""
+            """Extract metadata from README content with enhanced table parsing."""
             import re
-            
+
             metadata = {}
-            
+
             try:
                 ## Enhanced markdown table parsing for various formats
-                
+
                 # Pattern 1: Standard metadata tables (key-value pairs)
                 table_patterns = [
                     # Two-column tables: | Key | Value |
                     r'\|([^|]+)\|([^|]+)\|\s*\n\|[-:\s|]+\|\s*\n((?:\|[^|]*\|[^|]*\|\s*\n?)+)',
                     # Three-column tables with headers: | Info | Details | Extra |
-                    r'\|([^|]*Information[^|]*)\|([^|]*Details[^|]*)\|[^|]*\|\s*\n\|[-:\s|]+\|\s*\n((?:\|[^|]*\|[^|]*\|[^|]*\|\s*\n?)+)'
+                    r'\|([^|]*Information[^|]*)\|([^|]*Details[^|]*)\|[^|]*\|\s*\n\|[-:\s|]+\|\s*\n((?:\|[^|]*\|[^|]*\|[^|]*\|\s*\n?)+)',
                 ]
-                
+
                 for pattern in table_patterns:
-                    table_matches = re.finditer(pattern, readme_content, re.MULTILINE | re.IGNORECASE)
-                    
+                    table_matches = re.finditer(
+                        pattern, readme_content, re.MULTILINE | re.IGNORECASE
+                    )
+
                     for table_match in table_matches:
-                        table_content = table_match.group(3) if len(table_match.groups()) >= 3 else table_match.group(1)
-                        rows = [row.strip() for row in table_content.split('\n') if row.strip() and '|' in row]
-                        
+                        table_content = (
+                            table_match.group(3)
+                            if len(table_match.groups()) >= 3
+                            else table_match.group(1)
+                        )
+                        rows = [
+                            row.strip()
+                            for row in table_content.split('\n')
+                            if row.strip() and '|' in row
+                        ]
+
                         for row in rows:
                             parts = [part.strip() for part in row.split('|')]
                             if len(parts) >= 3:
                                 key = parts[1].strip().lower()
                                 value = parts[2].strip()
-                                
+
                                 # Clean up key and value
-                                if key and value and key not in ['-', '--', ''] and value not in ['-', '--', '']:
+                                if (
+                                    key
+                                    and value
+                                    and key not in ['-', '--', '']
+                                    and value not in ['-', '--', '']
+                                ):
                                     # Normalize key names
                                     key_normalized = re.sub(r'[^\w\s]', '', key).replace(' ', '_')
-                                    
+
                                     # Store common variations
-                                    if 'use_case' in key or 'usecase' in key or key in ['type', 'use_case_type']:
+                                    if (
+                                        'use_case' in key
+                                        or 'usecase' in key
+                                        or key in ['type', 'use_case_type']
+                                    ):
                                         metadata['use_case'] = value
-                                    elif 'framework' in key or 'sdk' in key or key in ['agent_type', 'agent_framework']:
+                                    elif (
+                                        'framework' in key
+                                        or 'sdk' in key
+                                        or key in ['agent_type', 'agent_framework']
+                                    ):
                                         metadata['framework'] = value
-                                    elif 'complexity' in key or 'level' in key or 'difficulty' in key:
+                                    elif (
+                                        'complexity' in key
+                                        or 'level' in key
+                                        or 'difficulty' in key
+                                    ):
                                         metadata['level'] = value
                                     elif 'component' in key or 'tools' in key or 'tech' in key:
                                         metadata['components'] = value
@@ -1992,51 +2235,57 @@ def discover_agentcore_examples_from_github(
                                         metadata['vertical'] = value
                                     else:
                                         metadata[key_normalized] = value
-                
+
                 # Pattern 2: Multi-column format tables (like memory tutorial)
                 # | Memory Type | Framework | Use Case | Notebook |
                 memory_pattern = r'\|\s*([^|]*Memory[^|]*)\s*\|\s*([^|]*Framework[^|]*)\s*\|\s*([^|]*Use\s*Case[^|]*)\s*\|[^|]*\|\s*\n\|[-:\s|]+\|\s*\n((?:\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*\n?)+)'
-                memory_match = re.search(memory_pattern, readme_content, re.MULTILINE | re.IGNORECASE)
-                
+                memory_match = re.search(
+                    memory_pattern, readme_content, re.MULTILINE | re.IGNORECASE
+                )
+
                 if memory_match:
                     table_content = memory_match.group(4)
-                    rows = [row.strip() for row in table_content.split('\n') if row.strip() and '|' in row]
-                    
+                    rows = [
+                        row.strip()
+                        for row in table_content.split('\n')
+                        if row.strip() and '|' in row
+                    ]
+
                     frameworks = set()
                     use_cases = set()
                     memory_types = set()
-                    
+
                     for row in rows:
                         parts = [part.strip() for part in row.split('|')]
                         if len(parts) >= 4:
                             memory_type = parts[1].strip()
                             framework = parts[2].strip()
                             use_case = parts[3].strip()
-                            
+
                             if memory_type and memory_type not in ['-', '--']:
                                 memory_types.add(memory_type)
                             if framework and framework not in ['-', '--']:
                                 frameworks.add(framework)
                             if use_case and use_case not in ['-', '--']:
                                 use_cases.add(use_case)
-                    
+
                     if frameworks:
                         metadata['framework'] = ', '.join(frameworks)
                     if use_cases:
                         metadata['use_case'] = ', '.join(use_cases)
                     if memory_types:
                         metadata['memory_types'] = ', '.join(memory_types)
-                
+
                 ## Look for key-value patterns in text
                 patterns = {
                     'use_case': r'(?:Use[_\s-]*[Cc]ase[^:]*|Type[^:]*|Purpose[^:]*):\s*([^\n]+)',
-                    'framework': r'(?:Framework|Agent\s*Framework|SDK\s*used|Technology):\s*([^\n]+)', 
+                    'framework': r'(?:Framework|Agent\s*Framework|SDK\s*used|Technology):\s*([^\n]+)',
                     'level': r'(?:Level|Difficulty|Skill\s*Level|Complexity):\s*([^\n]+)',
                     'components': r'(?:Components|AgentCore\s*Components|Tools|Technologies):\s*([^\n]+)',
                     'authentication': r'(?:Auth|Authentication|OAuth|Security):\s*([^\n]+)',
-                    'vertical': r'(?:Vertical|Domain|Industry|Use\s*case\s*vertical):\s*([^\n]+)'
+                    'vertical': r'(?:Vertical|Domain|Industry|Use\s*case\s*vertical):\s*([^\n]+)',
                 }
-                
+
                 for key, pattern in patterns.items():
                     matches = re.finditer(pattern, readme_content, re.IGNORECASE)
                     for match in matches:
@@ -2044,14 +2293,14 @@ def discover_agentcore_examples_from_github(
                         if value and len(value) < 200:  # Reasonable length limit
                             if key not in metadata or len(value) > len(metadata[key]):
                                 metadata[key] = value
-                
+
                 ## Extract tags from headers and content
                 tag_patterns = [
                     r'##?\s*([^#\n]+(?:oauth|auth|security|strands|langgraph|memory|tools|gateway)[^#\n]*)',
                     r'(?:supports?|includes?|features?)[^.]*?(oauth|authentication|memory|tools|gateway|strands|langgraph)',
-                    r'\*\*([^*]*(?:oauth|auth|strands|memory|tools)[^*]*)\*\*'
+                    r'\*\*([^*]*(?:oauth|auth|strands|memory|tools)[^*]*)\*\*',
                 ]
-                
+
                 tags = set()
                 for pattern in tag_patterns:
                     matches = re.finditer(pattern, readme_content, re.IGNORECASE)
@@ -2069,124 +2318,140 @@ def discover_agentcore_examples_from_github(
                             tags.add('tools')
                         if 'gateway' in tag_text:
                             tags.add('gateway')
-                
+
                 if tags:
                     metadata['tags'] = ', '.join(tags)
-                
+
                 return metadata
-                
-            except Exception as e:
+
+            except Exception:
                 return {}
-        
+
         def fetch_example_details(section: str, example_name: str) -> Optional[ExampleMetadata]:
-            """Fetch detailed information about a specific example"""
-            
-            cache_key = f"{section}/{example_name}"
+            """Fetch detailed information about a specific example."""
+            cache_key = f'{section}/{example_name}'
             if cache_key in cache:
                 return cache[cache_key]
-            
+
             try:
                 time.sleep(0.5)  ## Rate limit protection
-                
+
                 ## Try to fetch README
-                readme_url = f"{raw_base_url}/{section}/{example_name}/README.md"
+                readme_url = f'{raw_base_url}/{section}/{example_name}/README.md'
                 readme_response = requests.get(readme_url, timeout=10)
-                
-                readme_content = ""
+
+                readme_content = ''
                 if readme_response.status_code == 200:
                     readme_content = readme_response.text
-                
+
                 ## Extract description (first meaningful line)
-                description = "AgentCore example"
+                description = 'AgentCore example'
                 if readme_content:
                     lines = readme_content.split('\n')
                     for line in lines:
-                        if line.strip() and not line.startswith('#') and not line.startswith('|') and len(line.strip()) > 20:
+                        if (
+                            line.strip()
+                            and not line.startswith('#')
+                            and not line.startswith('|')
+                            and len(line.strip()) > 20
+                        ):
                             description = line.strip()[:200]
                             if description.endswith('...'):
-                                description = description[:-3] + "..."
+                                description = description[:-3] + '...'
                             break
-                
+
                 metadata_dict = extract_metadata_from_readme(readme_content)
-                
+
                 ## Determine format type
-                format_type = "python"
+                format_type = 'python'
                 try:
                     time.sleep(0.5)  ## Rate limit protection
-                    files_response = requests.get(f"{base_url}/contents/{section}/{example_name}", timeout=10)
+                    files_response = requests.get(
+                        f'{base_url}/contents/{section}/{example_name}', timeout=10
+                    )
                     if files_response.status_code == 200:
                         files = files_response.json()
                         has_notebook = any(f.get('name', '').endswith('.ipynb') for f in files)
-                        has_dockerfile = any(f.get('name', '').lower() in ['dockerfile', 'docker-compose.yml'] for f in files)
-                        
+                        has_dockerfile = any(
+                            f.get('name', '').lower() in ['dockerfile', 'docker-compose.yml']
+                            for f in files
+                        )
+
                         if has_notebook:
-                            format_type = "jupyter"
+                            format_type = 'jupyter'
                         elif has_dockerfile:
-                            format_type = "docker"
-                except:
+                            format_type = 'docker'
+                except Exception as e:
+                    print(f'Error determining format type: {e}')
                     pass
-                
+
                 ## Parse components
                 components = []
                 if 'components' in metadata_dict:
                     components = [c.strip() for c in metadata_dict['components'].split(',')]
-                
+
                 ## Infer components from section and name
                 if section == '01-tutorials':
                     component_keywords = {
                         'memory': 'Memory',
-                        'gateway': 'Gateway', 
+                        'gateway': 'Gateway',
                         'runtime': 'Runtime',
                         'identity': 'Identity',
                         'tools': 'Tools',
-                        'observability': 'Observability'
+                        'observability': 'Observability',
                     }
-                    
+
                     for keyword, component in component_keywords.items():
                         if keyword in example_name.lower():
                             components.append(component)
-                
+
                 example = ExampleMetadata(
                     name=example_name.replace('-', ' ').title(),
-                    path=f"{section}/{example_name}",
+                    path=f'{section}/{example_name}',
                     description=description,
                     use_case=metadata_dict.get('use_case', metadata_dict.get('usecase', '')),
                     framework=metadata_dict.get('framework', ''),
                     level=metadata_dict.get('level', metadata_dict.get('difficulty', '')),
                     components=components,
                     format_type=format_type,
-                    github_url=f"{web_base_url}/{section}/{example_name}"
+                    github_url=f'{web_base_url}/{section}/{example_name}',
                 )
-                
+
                 # Store the full metadata for enhanced searching
                 example.metadata = metadata_dict
-                
+
                 cache[cache_key] = example
                 return example
-                
-            except Exception as e:
+
+            except Exception:
                 return None
-        
+
         ## Main discovery logic
         try:
             # First, try GitHub's search API if we have a query
             priority_results = []
             auth_status = None
             if query:
-                query_terms = [term.strip() for term in query.lower().split() if len(term.strip()) > 2]
+                query_terms = [
+                    term.strip() for term in query.lower().split() if len(term.strip()) > 2
+                ]
                 if query_terms:
                     priority_results = github_search_api(query_terms)
-                    
+
                     # Check if we got an authentication requirement
-                    if priority_results and isinstance(priority_results[0], dict) and 'auth_required' in priority_results[0]:
+                    if (
+                        priority_results
+                        and isinstance(priority_results[0], dict)
+                        and 'auth_required' in priority_results[0]
+                    ):
                         auth_status = priority_results[0]
                         priority_results = []
-            
+
             structure = fetch_repository_structure()
-            
+
             if not structure:
-                return f"""GitHub API Error
-                
+                return """GitHub API Error
+
 Issue: Could not fetch repository structure
 Possible causes:
 - GitHub API rate limits
@@ -2200,114 +2465,122 @@ Repository Structure:
 - `02-use-cases/` - Real-world applications
 - `03-integrations/` - Framework integrations
 """
-            
+
             ## Discover examples based on filters
             examples = []
             processed_examples = set()  # Track to avoid duplicates
-            
+
             # Process priority results from GitHub search first
             for result in priority_results:
                 section = result['section']
                 example_name = result['name']
-                
+
                 # Filter by category if specified
-                if category != "all":
+                if category != 'all':
                     category_mapping = {
-                        "tutorials": "01-tutorials",
-                        "use-cases": "02-use-cases", 
-                        "integrations": "03-integrations",
-                        "getting-started": "01-tutorials",
-                        "advanced": "02-use-cases"
+                        'tutorials': '01-tutorials',
+                        'use-cases': '02-use-cases',
+                        'integrations': '03-integrations',
+                        'getting-started': '01-tutorials',
+                        'advanced': '02-use-cases',
                     }
-                    
+
                     if category_mapping.get(category, category) != section:
                         continue
-                
-                example_key = f"{section}/{example_name}"
+
+                example_key = f'{section}/{example_name}'
                 if example_key not in processed_examples:
                     example = fetch_example_details(section, example_name)
                     if example:
                         examples.append(example)
                         processed_examples.add(example_key)
-            
+
             # Then process remaining examples from directory structure
             for section, example_names in structure.items():
                 ## Filter by category
-                if category != "all":
+                if category != 'all':
                     category_mapping = {
-                        "tutorials": "01-tutorials",
-                        "use-cases": "02-use-cases",
-                        "integrations": "03-integrations",
-                        "getting-started": "01-tutorials",
-                        "advanced": "02-use-cases"
+                        'tutorials': '01-tutorials',
+                        'use-cases': '02-use-cases',
+                        'integrations': '03-integrations',
+                        'getting-started': '01-tutorials',
+                        'advanced': '02-use-cases',
                     }
-                    
+
                     if category_mapping.get(category, category) != section:
                         continue
-                
+
                 ## Smart filtering: if query is provided, search all examples names first for quick matches
                 if query:
                     query_lower = query.lower()
                     ## Pre-filter by example names that might match the query
                     relevant_names = []
                     for example_name in example_names:
-                        example_key = f"{section}/{example_name}"
+                        example_key = f'{section}/{example_name}'
                         # Skip if already processed from GitHub search
                         if example_key in processed_examples:
                             continue
                         if any(keyword in example_name.lower() for keyword in query_lower.split()):
                             relevant_names.append(example_name)
-                    
+
                     ## If we found relevant names, prioritize them, otherwise fetch first few
                     if relevant_names:
                         target_names = relevant_names[:8]  ## Get up to 8 relevant matches
                     else:
                         # If we already have priority results, fetch fewer fallback examples
                         fallback_count = 4 if priority_results else 8
-                        target_names = [name for name in example_names if f"{section}/{name}" not in processed_examples][:fallback_count]
+                        target_names = [
+                            name
+                            for name in example_names
+                            if f'{section}/{name}' not in processed_examples
+                        ][:fallback_count]
                 else:
-                    target_names = [name for name in example_names if f"{section}/{name}" not in processed_examples][:6]  ## Default limit when no query
-                
+                    target_names = [
+                        name
+                        for name in example_names
+                        if f'{section}/{name}' not in processed_examples
+                    ][:6]  ## Default limit when no query
+
                 ## Fetch details for selected examples
                 for example_name in target_names:
-                    example_key = f"{section}/{example_name}"
+                    example_key = f'{section}/{example_name}'
                     if example_key not in processed_examples:
                         example = fetch_example_details(section, example_name)
                         if example:
                             examples.append(example)
                             processed_examples.add(example_key)
-            
+
             ## Filter by format
-            if format_type != "all":
+            if format_type != 'all':
                 examples = [ex for ex in examples if ex.format_type == format_type]
-            
+
             ## Enhanced semantic search by query
             if query:
                 query_lower = query.lower()
                 query_terms = set(query_lower.split())
-                
+
                 scored_examples = []
-                
+
                 for example in examples:
                     score = 0
-                    
+
                     # Build comprehensive searchable content
                     searchable_fields = {
                         'name': example.name.lower(),
-                        'description': example.description.lower(), 
+                        'description': example.description.lower(),
                         'use_case': example.use_case.lower(),
                         'framework': example.framework.lower(),
-                        'components': " ".join(example.components).lower(),
+                        'components': ' '.join(example.components).lower(),
                         'level': example.level.lower(),
-                        'format_type': example.format_type.lower()
+                        'format_type': example.format_type.lower(),
                     }
-                    
+
                     # Add any extra metadata we extracted
                     if hasattr(example, 'metadata'):
                         for key, value in example.metadata.items():
                             if isinstance(value, str):
                                 searchable_fields[key] = value.lower()
-                    
+
                     # Calculate relevance score
                     for term in query_terms:
                         # Exact matches in key fields get higher scores
@@ -2319,12 +2592,12 @@ Repository Structure:
                             score += 6
                         if term in searchable_fields['components']:
                             score += 4
-                            
+
                         # Partial matches in any field
                         for field_name, field_content in searchable_fields.items():
                             if term in field_content:
                                 score += 2
-                                
+
                         # Handle common synonyms and related terms
                         synonyms = {
                             'oauth': ['authentication', 'auth', 'security', 'login'],
@@ -2332,91 +2605,107 @@ Repository Structure:
                             'memory': ['storage', 'persistence', 'state'],
                             'tools': ['functions', 'capabilities', 'mcp'],
                             'gateway': ['api', 'endpoint', 'server'],
-                            'examples': ['samples', 'tutorials', 'demos']
+                            'examples': ['samples', 'tutorials', 'demos'],
                         }
-                        
+
                         if term in synonyms:
                             for synonym in synonyms[term]:
                                 for field_content in searchable_fields.values():
                                     if synonym in field_content:
                                         score += 1
-                        
+
                         # Reverse synonym lookup
                         for key_term, synonym_list in synonyms.items():
                             if term in synonym_list:
                                 for field_content in searchable_fields.values():
                                     if key_term in field_content:
                                         score += 1
-                    
+
                     # Boost score for multi-term matches in same field
-                    all_content = " ".join(searchable_fields.values())
+                    all_content = ' '.join(searchable_fields.values())
                     if all(term in all_content for term in query_terms):
                         score += 5
-                    
+
                     if score > 0:
                         scored_examples.append((example, score))
-                
+
                 # Sort by relevance score and take results
                 scored_examples.sort(key=lambda x: x[1], reverse=True)
                 examples = [example for example, score in scored_examples]
-            
+
             ## Format results
             if not examples:
-                no_results_msg = [f"## Search: No AgentCore Examples Found"]
-                no_results_msg.append("")
+                no_results_msg = ['## Search: No AgentCore Examples Found']
+                no_results_msg.append('')
                 no_results_msg.append(f'Query: "{query}" (no matches)')
-                no_results_msg.append(f"Category: {category}")
-                no_results_msg.append(f"Format: {format_type}")
-                no_results_msg.append("")
-                
+                no_results_msg.append(f'Category: {category}')
+                no_results_msg.append(f'Format: {format_type}')
+                no_results_msg.append('')
+
                 # Add authentication prompt if needed
                 if auth_status:
                     if auth_status.get('gh_available'):
-                        no_results_msg.append("🔍 **Enhanced Search Available**")
-                        no_results_msg.append("")
-                        no_results_msg.append("You're not authenticated with GitHub CLI. For much better search results:")
-                        no_results_msg.append("")
-                        no_results_msg.append("```bash")
-                        no_results_msg.append("gh auth login")
-                        no_results_msg.append("```")
-                        no_results_msg.append("")
-                        no_results_msg.append("This enables:")
-                        no_results_msg.append("- Real-time GitHub code search")
-                        no_results_msg.append("- Semantic matching in README files")
-                        no_results_msg.append("- Much faster and more accurate results")
-                        no_results_msg.append("")
-                        no_results_msg.append("After authentication, try your search again!")
-                        no_results_msg.append("")
+                        no_results_msg.append('🔍 **Enhanced Search Available**')
+                        no_results_msg.append('')
+                        no_results_msg.append(
+                            "You're not authenticated with GitHub CLI. For much better search results:"
+                        )
+                        no_results_msg.append('')
+                        no_results_msg.append('```bash')
+                        no_results_msg.append('gh auth login')
+                        no_results_msg.append('```')
+                        no_results_msg.append('')
+                        no_results_msg.append('This enables:')
+                        no_results_msg.append('- Real-time GitHub code search')
+                        no_results_msg.append('- Semantic matching in README files')
+                        no_results_msg.append('- Much faster and more accurate results')
+                        no_results_msg.append('')
+                        no_results_msg.append('After authentication, try your search again!')
+                        no_results_msg.append('')
                     else:
-                        no_results_msg.append("🔍 **Enhanced Search Available**")
-                        no_results_msg.append("")
-                        no_results_msg.append("Install GitHub CLI for much better search results:")
-                        no_results_msg.append("")
-                        no_results_msg.append("```bash")
-                        no_results_msg.append("# Install GitHub CLI")
-                        no_results_msg.append("brew install gh  # macOS")
-                        no_results_msg.append("# or: apt install gh  # Linux")
-                        no_results_msg.append("# or: winget install GitHub.cli  # Windows")
-                        no_results_msg.append("")
-                        no_results_msg.append("# Then authenticate")
-                        no_results_msg.append("gh auth login")
-                        no_results_msg.append("```")
-                        no_results_msg.append("")
-                
-                no_results_msg.append("Available Categories:")
-                no_results_msg.append(f"- `tutorials` - Learning-focused examples ({len(structure.get('01-tutorials', []))} available)")
-                no_results_msg.append(f"- `use-cases` - Real-world applications ({len(structure.get('02-use-cases', []))} available)")
-                no_results_msg.append(f"- `integrations` - Framework integrations ({len(structure.get('03-integrations', []))})")
-                no_results_msg.append("")
-                no_results_msg.append("Try:")
-                no_results_msg.append('- Broader search terms: `discover_agentcore_examples_from_github(query="memory")`')
-                no_results_msg.append('- All examples: `discover_agentcore_examples_from_github()`')
-                no_results_msg.append('- Specific category: `discover_agentcore_examples_from_github(category="tutorials")`')
-                no_results_msg.append("")
-                no_results_msg.append("Direct Browse: [GitHub Repository](https://github.com/awslabs/amazon-bedrock-agentcore-samples)")
-                
-                return "\\n".join(no_results_msg)
-            
+                        no_results_msg.append('🔍 **Enhanced Search Available**')
+                        no_results_msg.append('')
+                        no_results_msg.append('Install GitHub CLI for much better search results:')
+                        no_results_msg.append('')
+                        no_results_msg.append('```bash')
+                        no_results_msg.append('# Install GitHub CLI')
+                        no_results_msg.append('brew install gh  # macOS')
+                        no_results_msg.append('# or: apt install gh  # Linux')
+                        no_results_msg.append('# or: winget install GitHub.cli  # Windows')
+                        no_results_msg.append('')
+                        no_results_msg.append('# Then authenticate')
+                        no_results_msg.append('gh auth login')
+                        no_results_msg.append('```')
+                        no_results_msg.append('')
+
+                no_results_msg.append('Available Categories:')
+                no_results_msg.append(
+                    f'- `tutorials` - Learning-focused examples ({len(structure.get("01-tutorials", []))} available)'
+                )
+                no_results_msg.append(
+                    f'- `use-cases` - Real-world applications ({len(structure.get("02-use-cases", []))} available)'
+                )
+                no_results_msg.append(
+                    f'- `integrations` - Framework integrations ({len(structure.get("03-integrations", []))})'
+                )
+                no_results_msg.append('')
+                no_results_msg.append('Try:')
+                no_results_msg.append(
+                    '- Broader search terms: `discover_agentcore_examples_from_github(query="memory")`'
+                )
+                no_results_msg.append(
+                    '- All examples: `discover_agentcore_examples_from_github()`'
+                )
+                no_results_msg.append(
+                    '- Specific category: `discover_agentcore_examples_from_github(category="tutorials")`'
+                )
+                no_results_msg.append('')
+                no_results_msg.append(
+                    'Direct Browse: [GitHub Repository](https://github.com/awslabs/amazon-bedrock-agentcore-samples)'
+                )
+
+                return '\\n'.join(no_results_msg)
+
             ## Group by section for display
             sections = {}
             for example in examples:
@@ -2424,110 +2713,120 @@ Repository Structure:
                 if section not in sections:
                     sections[section] = []
                 sections[section].append(example)
-            
-            result_parts = [f"## Search: AgentCore Examples Discovery"]
-            
+
+            result_parts = ['## Search: AgentCore Examples Discovery']
+
             if query:
-                result_parts.append(f"Query: \"{query}\"")
-            
+                result_parts.append(f'Query: "{query}"')
+
             # Indicate search method used
             if priority_results:
-                result_parts.append(f"Search Method: GitHub CLI (authenticated) ✓")
+                result_parts.append('Search Method: GitHub CLI (authenticated) ✓')
             elif auth_status:
                 if auth_status.get('gh_available'):
-                    result_parts.append(f"Search Method: Content-based (GitHub CLI not authenticated)")
-                    result_parts.append(f"💡 Tip: Run `gh auth login` for enhanced search!")
+                    result_parts.append(
+                        'Search Method: Content-based (GitHub CLI not authenticated)'
+                    )
+                    result_parts.append('💡 Tip: Run `gh auth login` for enhanced search!')
                 else:
-                    result_parts.append(f"Search Method: Content-based (GitHub CLI not installed)")
-                    result_parts.append(f"💡 Tip: Install GitHub CLI for enhanced search!")
+                    result_parts.append('Search Method: Content-based (GitHub CLI not installed)')
+                    result_parts.append('💡 Tip: Install GitHub CLI for enhanced search!')
             else:
-                result_parts.append(f"Search Method: Content-based")
-                
-            result_parts.append(f"Found: {len(examples)} examples")
-            result_parts.append("")
-            
+                result_parts.append('Search Method: Content-based')
+
+            result_parts.append(f'Found: {len(examples)} examples')
+            result_parts.append('')
+
             ## Format by section
             section_names = {
-                "01-tutorials": "Tutorial: Tutorials (Learning-focused)",
-                "02-use-cases": "Target: Use Cases (Real-world applications)", 
-                "03-integrations": "Link: Integrations (Framework examples)"
+                '01-tutorials': 'Tutorial: Tutorials (Learning-focused)',
+                '02-use-cases': 'Target: Use Cases (Real-world applications)',
+                '03-integrations': 'Link: Integrations (Framework examples)',
             }
-            
+
             for section, section_examples in sections.items():
-                section_title = section_names.get(section, f"{section}")
-                result_parts.append(f"#### {section_title}")
-                result_parts.append("")
-                
+                section_title = section_names.get(section, f'{section}')
+                result_parts.append(f'#### {section_title}')
+                result_parts.append('')
+
                 for example in section_examples:
-                    result_parts.append(f"##### {example.name}")
-                    result_parts.append(f"- Description: {example.description}")
-                    
+                    result_parts.append(f'##### {example.name}')
+                    result_parts.append(f'- Description: {example.description}')
+
                     if example.use_case:
-                        result_parts.append(f"- Use Case: {example.use_case}")
+                        result_parts.append(f'- Use Case: {example.use_case}')
                     if example.framework:
-                        result_parts.append(f"- Framework: {example.framework}")
+                        result_parts.append(f'- Framework: {example.framework}')
                     if example.level:
-                        result_parts.append(f"- Level: {example.level}")
+                        result_parts.append(f'- Level: {example.level}')
                     if example.components:
-                        result_parts.append(f"- Components: {', '.join(example.components)}")
-                    
+                        result_parts.append(f'- Components: {", ".join(example.components)}')
+
                     # Add rich metadata from README tables
                     if hasattr(example, 'metadata') and example.metadata:
                         metadata_items = []
                         for key, value in example.metadata.items():
-                            if key not in ['use_case', 'framework', 'level', 'components'] and value and len(value) < 100:
+                            if (
+                                key not in ['use_case', 'framework', 'level', 'components']
+                                and value
+                                and len(value) < 100
+                            ):
                                 if key == 'vertical':
-                                    metadata_items.append(f"Industry: {value}")
+                                    metadata_items.append(f'Industry: {value}')
                                 elif key == 'authentication':
-                                    metadata_items.append(f"Auth: {value}")
+                                    metadata_items.append(f'Auth: {value}')
                                 elif key == 'tags':
-                                    metadata_items.append(f"Tags: {value}")
+                                    metadata_items.append(f'Tags: {value}')
                                 elif key == 'memory_types':
-                                    metadata_items.append(f"Memory Types: {value}")
+                                    metadata_items.append(f'Memory Types: {value}')
                                 else:
                                     formatted_key = key.replace('_', ' ').title()
-                                    metadata_items.append(f"{formatted_key}: {value}")
-                        
+                                    metadata_items.append(f'{formatted_key}: {value}')
+
                         for item in metadata_items[:3]:  # Limit to avoid clutter
-                            result_parts.append(f"- {item}")
-                    
-                    result_parts.append(f"- Format: {example.format_type.title()}")
-                    result_parts.append(f"- GitHub: [View Example]({example.github_url})")
-                    result_parts.append("")
-            
-            result_parts.append("#### Launch: Getting Started:")
-            result_parts.append("1. Browse: Click GitHub links to view examples")
-            result_parts.append("2. Clone: `git clone https://github.com/awslabs/amazon-bedrock-agentcore-samples.git`")
-            result_parts.append("3. Navigate: `cd amazon-bedrock-agentcore-samples/[example-path]`")
-            result_parts.append("4. Follow: README instructions for setup")
-            
+                            result_parts.append(f'- {item}')
+
+                    result_parts.append(f'- Format: {example.format_type.title()}')
+                    result_parts.append(f'- GitHub: [View Example]({example.github_url})')
+                    result_parts.append('')
+
+            result_parts.append('#### Launch: Getting Started:')
+            result_parts.append('1. Browse: Click GitHub links to view examples')
+            result_parts.append(
+                '2. Clone: `git clone https://github.com/awslabs/amazon-bedrock-agentcore-samples.git`'
+            )
+            result_parts.append(
+                '3. Navigate: `cd amazon-bedrock-agentcore-samples/[example-path]`'
+            )
+            result_parts.append('4. Follow: README instructions for setup')
+
             total_available = sum(len(examples) for examples in structure.values())
-            result_parts.append(f"")
-            result_parts.append(f"Repository: {total_available} total examples available")
-            result_parts.append(f"Last Updated: Live from GitHub (dynamic)")
-            
-            return "\\n".join(result_parts)
-            
+            result_parts.append('')
+            result_parts.append(f'Repository: {total_available} total examples available')
+            result_parts.append('Last Updated: Live from GitHub (dynamic)')
+
+            return '\\n'.join(result_parts)
+
         except Exception as e:
             return f"""GitHub Discovery Error: {str(e)[:200]}...
-            
+
 Manual Browse: [AgentCore Samples Repository](https://github.com/awslabs/amazon-bedrock-agentcore-samples)
 
 Repository Sections:
 - Tutorials: Learning-focused examples for each AgentCore component
-- Use Cases: Real-world application implementations  
+- Use Cases: Real-world application implementations
 - Integrations: Framework integration patterns (Strands, LangChain, etc.)
 """
-            
+
     except ImportError:
         return """Requests Library Required
-        
+
 Missing: `requests` library needed for GitHub API access
 
-Install: 
+Install:
 ```bash
 pip install requests
-## or  
+## or
 uv add requests
 ```
 
@@ -2536,26 +2835,25 @@ Purpose: Dynamically discover working examples from AgentCore samples repository
 Manual Browse: [AgentCore Samples](https://github.com/awslabs/amazon-bedrock-agentcore-samples)
 """
 
+
 def register_github_discovery_tools(mcp: FastMCP):
     """Register GitHub examples discovery tools."""
-    
+
     @mcp.tool()
     async def discover_agentcore_examples(
-        query: str = "",
-        category: str = "all",  ## "all", "tutorials", "use-cases", "integrations"
-        format_type: str = "all"  ## "all", "python", "jupyter", "docker"
+        query: str = '',
+        category: str = 'all',  ## "all", "tutorials", "use-cases", "integrations"
+        format_type: str = 'all',  ## "all", "python", "jupyter", "docker"
     ) -> str:
-        """
-        Search: DISCOVER AGENTCORE EXAMPLES FROM GITHUB
-        
+        """Search: DISCOVER AGENTCORE EXAMPLES FROM GITHUB.
+
         Dynamically discovers working examples from amazon-bedrock-agentcore-samples repository.
         Always up-to-date with the latest samples and use cases.
-        
+
         Examples:
         - discover_agentcore_examples(query="oauth")  ## Find OAuth examples
-        - discover_agentcore_examples(query="memory integration")  ## Memory examples  
+        - discover_agentcore_examples(query="memory integration")  ## Memory examples
         - discover_agentcore_examples(category="tutorials")  ## Beginner examples
         - discover_agentcore_examples(format_type="jupyter")  ## Notebook examples
         """
-        
         return discover_agentcore_examples_from_github(query, category, format_type)
