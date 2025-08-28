@@ -27,8 +27,8 @@ def extract_result(mcp_result):
         elif hasattr(result_content, 'content'):
             return str(result_content.content)
         return str(result_content)
-    elif hasattr(mcp_result, 'content'):
-        return str(mcp_result.content)
+    elif hasattr(mcp_result, 'content') and not isinstance(mcp_result, tuple):
+        return str(mcp_result.content)  # type: ignore
     return str(mcp_result)
 
 

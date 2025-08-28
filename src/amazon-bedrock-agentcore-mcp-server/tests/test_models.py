@@ -95,9 +95,9 @@ class TestAgentConfig:
         with pytest.raises(ValidationError):
             AgentConfig(name='')
 
-        # Also test None name
+        # Also test missing name parameter (should raise ValidationError)
         with pytest.raises(ValidationError):
-            AgentConfig()
+            AgentConfig(name=None)  # type: ignore
 
 
 class TestGatewayConfig:
@@ -184,7 +184,7 @@ class TestDeploymentResult:
         """Test DeploymentResult field validation."""
         # Should require success and agent_name
         with pytest.raises(ValidationError):
-            DeploymentResult(message='test')  # missing required fields
+            DeploymentResult(success=None, agent_name=None, message='test')  # type: ignore
 
 
 class TestModelSerialization:
