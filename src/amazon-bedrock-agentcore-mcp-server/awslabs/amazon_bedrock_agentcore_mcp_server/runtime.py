@@ -57,7 +57,9 @@ from typing import Any, Dict, Literal
 # ============================================================================
 
 
-def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
+def check_agent_oauth_status(
+    agent_name: str, region: str = 'us-east-1'
+):  # pragma: allowlist secret
     """Check if agent is actually deployed with OAuth using AWS API (get_agent_runtime).
 
     This is the authoritative source - much better than parsing YAML files.
@@ -154,20 +156,24 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
             inbound_config = runtime_response.get('inboundConfig', {})
 
             # Check if OAuth config exists in our separate storage
-            oauth_file = Path.home() / '.agentcore_gateways' / f'{agent_name}_runtime.json'
-            oauth_available = oauth_file.exists()
+            oauth_file = (
+                Path.home() / '.agentcore_gateways' / f'{agent_name}_runtime.json'
+            )  # pragma: allowlist secret
+            oauth_available = oauth_file.exists()  # pragma: allowlist secret
 
             # Determine OAuth status from AWS API response
-            oauth_deployed = bool(inbound_config)  # Any inbound config indicates auth requirements
+            oauth_deployed = bool(
+                inbound_config
+            )  # Any inbound config indicates auth requirements # pragma: allowlist secret
 
-            if oauth_deployed:
+            if oauth_deployed:  # pragma: allowlist secret
                 auth_details = []
                 if 'customJWTAuthorizer' in inbound_config:
                     jwt_auth = inbound_config['customJWTAuthorizer']
                     auth_details.append(
                         f'JWT Auth (Client: {jwt_auth.get("clientId", "Unknown")})'
                     )
-                if 'cognitoAuthorizer' in inbound_config:
+                if 'cognitoAuthorizer' in inbound_config:  # pragma: allowlist secret
                     cognito_auth = inbound_config['cognitoAuthorizer']
                     auth_details.append(
                         f'Cognito Auth (Pool: {cognito_auth.get("userPoolId", "Unknown")})'
@@ -178,7 +184,7 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
                 )
                 return True, oauth_available, f'Agent deployed with OAuth: {auth_summary}'
 
-            elif oauth_available:
+            elif oauth_available:  # pragma: allowlist secret
                 return (
                     False,
                     True,
@@ -190,7 +196,7 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
 
         except Exception as api_error:
             # Fallback to local config analysis if API fails
-            if oauth_available:
+            if oauth_available:  # pragma: allowlist secret
                 return (
                     False,
                     True,
@@ -206,7 +212,7 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
         oauth_file = Path.home() / '.agentcore_gateways' / f'{agent_name}_runtime.json'
         oauth_available = oauth_file.exists()
 
-        if oauth_available:
+        if oauth_available:  # pragma: allowlist secret
             return (
                 False,
                 True,
@@ -216,7 +222,7 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
             return False, False, f'Error checking OAuth status: {str(e)}'
 
 
-def validate_oauth_config(agent_name: str, region: str = 'us-east-1'):
+def validate_oauth_config(agent_name: str, region: str = 'us-east-1'):  # pragma: allowlist secret
     """Unified OAuth configuration validation for runtime agents.
 
     Returns:
@@ -229,8 +235,10 @@ def validate_oauth_config(agent_name: str, region: str = 'us-east-1'):
         from pathlib import Path
 
         # First check if the agent is actually deployed with OAuth
-        oauth_deployed, oauth_available, oauth_status = check_agent_oauth_status(
-            agent_name, region
+        oauth_deployed, oauth_available, oauth_status = (
+            check_agent_oauth_status(  # pragma: allowlist secret
+                agent_name, region
+            )
         )
 
         # Load OAuth configuration (same format as gateways)
@@ -2074,7 +2082,7 @@ async def execute_agentcore_deployment_cli(
     memory_enabled: bool,
     execution_role: str,
     environment: str,
-    enable_oauth: bool = False,
+    enable_oauth: bool = False,  # pragma: allowlist secret
     cognito_user_pool: str = '',
 ) -> str:
     """Execute AgentCore deployment using CLI commands."""
@@ -2263,7 +2271,7 @@ async def execute_agentcore_deployment_sdk(
     memory_enabled: bool,
     execution_role: str,
     environment: str,
-    enable_oauth: bool = False,
+    enable_oauth: bool = False,  # pragma: allowlist secret
     cognito_user_pool: str = '',
 ) -> str:
     """Execute AgentCore deployment using SDK - follows exact tutorial patterns."""
@@ -2293,7 +2301,7 @@ Alternative: Use `execution_mode: "cli"` for CLI commands instead.
 
         deployment_steps = []
         deployment_results = {}
-        oauth_config = None
+        oauth_config = None  # pragma: allowlist secret
 
         # Read and validate the app file
         with open(app_file, 'r') as f:
@@ -2321,7 +2329,7 @@ Use the `transform_to_agentcore` tool to fix this.
 """
 
         # Handle OAuth configuration if enabled
-        if enable_oauth:
+        if enable_oauth:  # pragma: allowlist secret
             deployment_steps.append(
                 'Security: OAuth authentication enabled - setting up Cognito...'
             )
@@ -2337,7 +2345,7 @@ Use the `transform_to_agentcore` tool to fix this.
                 gateway_client = GatewayClient(region_name=region)
 
                 # Create OAuth authorizer with Cognito (reusing existing gateway method)
-                cognito_result = gateway_client.create_oauth_authorizer_with_cognito(
+                cognito_result = gateway_client.create_oauth_authorizer_with_cognito(  # pragma: allowlist secret
                     f'{agent_name}_runtime'
                 )
                 client_info = cognito_result.get('client_info', {})
@@ -2351,12 +2359,12 @@ Use the `transform_to_agentcore` tool to fix this.
                 config_dir = Path.home() / '.agentcore_gateways'  # Same directory as gateways!
                 config_dir.mkdir(exist_ok=True)
 
-                oauth_config = {
+                oauth_config = {  # pragma: allowlist secret
                     'gateway_name': f'{agent_name}_runtime',  # Same format as gateways
                     'gateway_id': f'runtime_{agent_name}',
                     'region': region,
                     'cognito_client_info': client_info,  # Same key as gateways
-                    'oauth_enabled': True,
+                    'oauth_enabled': True,  # pragma: allowlist secret
                     'agent_name': agent_name,  # Additional runtime-specific info
                     'created_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
                 }
@@ -2374,7 +2382,7 @@ Use the `transform_to_agentcore` tool to fix this.
             except Exception as oauth_error:
                 return f"""X OAuth Setup Failed
 
-Error: {str(oauth_error)}
+Error: {str(oauth_error)} # pragma: allowlist secret
 Agent: {agent_name}
 
 Troubleshooting:
@@ -2416,7 +2424,7 @@ Troubleshooting:
 
             # Note: OAuth configuration will be handled at invocation time
             # Runtime.configure() doesn't support inbound_config directly
-            if enable_oauth and oauth_config:
+            if enable_oauth and oauth_config:  # pragma: allowlist secret
                 deployment_steps.append('OK OAuth config prepared - will be used for invocation')
 
             configure_result = runtime.configure(**configure_params)
@@ -2485,7 +2493,7 @@ Troubleshooting:
                     test_payload = {'prompt': 'Hello! Testing deployment.'}
 
                     # For OAuth agents, test invocation requires proper authentication
-                    if enable_oauth:
+                    if enable_oauth:  # pragma: allowlist secret
                         deployment_steps.append('! OAuth-enabled agent - skipping direct test')
                         deployment_steps.append(
                             'Note: Use `get_runtime_oauth_token` and `invoke_oauth_agent` for testing'
@@ -2506,9 +2514,9 @@ Troubleshooting:
             os.chdir(original_cwd)
 
         # Generate success response with OAuth information
-        oauth_summary = ''
-        if enable_oauth and oauth_config:
-            client_info = oauth_config.get('cognito_client_info', {})
+        oauth_summary = ''  # pragma: allowlist secret
+        if enable_oauth and oauth_config:  # pragma: allowlist secret
+            client_info = oauth_config.get('cognito_client_info', {})  # pragma: allowlist secret
             oauth_summary = f"""
 
 ### OAuth Configuration:
@@ -2527,9 +2535,9 @@ Troubleshooting:
 - Agent Name: `{agent_name}`
 - Region: `{region}`
 - Status: `{deployment_results.get('status', 'DEPLOYED')}`
-- OAuth Enabled: `{enable_oauth}`
+- OAuth Enabled: `{enable_oauth}` # pragma: allowlist secret
 {f'- Test Status: `{deployment_results.get("test_status", "N/A")}`' if deployment_results.get('test_status') else ''}
-{oauth_summary}
+{oauth_summary} # pragma: allowlist secret
 
 ### Next Steps:
 - Use `invoke_agent` to interact with your deployed agent{'' if not enable_oauth else ' (with OAuth tokens)'}
