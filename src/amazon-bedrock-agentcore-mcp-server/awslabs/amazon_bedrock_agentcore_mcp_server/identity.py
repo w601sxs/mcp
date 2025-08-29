@@ -26,7 +26,8 @@ MCP TOOLS IMPLEMENTED:
 """
 
 import time
-from .utils import SDK_AVAILABLE
+from .utils import RUNTIME_AVAILABLE, SDK_AVAILABLE
+from bedrock_agentcore_starter_toolkit import Runtime
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
@@ -448,3 +449,433 @@ Troubleshooting:
 1. Check AWS credentials: `aws sts get-caller-identity`
 2. Verify AgentCore permissions
 3. Check provider exists: `manage_credentials(action="list")`"""
+
+
+## ============================================================================
+## OAUTH ACCESS TOKEN GENERATION
+## ============================================================================
+
+
+def register_oauth_tools(mcp: FastMCP):
+    """Register OAuth-related tools with the MCP server."""
+
+    @mcp.tool()
+    async def get_oauth_access_token(
+        method: str = Field(
+            default='ask',
+            description='Token generation method',
+            enum=['ask', 'gateway_client', 'manual_curl'],
+        ),
+        gateway_name: str = Field(
+            default='', description='Gateway name (for gateway_client method)'
+        ),
+        client_id: str = Field(default='', description='OAuth client ID (for manual_curl method)'),
+        client_secret: str = Field(
+            default='', description='OAuth client secret (for manual_curl method)'
+        ),
+        token_endpoint: str = Field(
+            default='', description='OAuth token endpoint URL (for manual_curl method)'
+        ),
+        scope: str = Field(default='', description='OAuth scope (for manual_curl method)'),
+        region: str = Field(default='us-east-1', description='AWS region'),
+    ) -> str:
+        """Generate OAuth access tokens for AgentCore gateways using multiple methods.
+
+        Methods:
+        - gateway_client: Uses simplified GatewayClient from starter toolkit (recommended)
+        - manual_curl: Direct OAuth 2.0 client credentials flow via HTTP
+        - ask: Present both options to choose from
+        """
+        try:
+            ## Method: ask - Present options
+            if method == 'ask':
+                return """## 🔐 OAuth Access Token Generation - Choose Your Method
+
+#### Option 1: Gateway Client (Recommended)
+Uses the simplified `GatewayClient` from the bedrock-agentcore-starter-toolkit.
+
+Advantages:
+- OK Built-in retry logic and error handling
+- OK Automatic DNS propagation handling
+- OK Abstracts OAuth complexity
+- OK Works with stored gateway configurations
+
+Usage:
+```python
+get_oauth_access_token(
+    method="gateway_client",
+    gateway_name="your-gateway-name"
+)
+```
+
+#### Option 2: Manual cURL (Direct Control)
+Direct OAuth 2.0 client credentials flow via HTTP requests.
+
+Advantages:
+- Full control over OAuth flow
+- No gateway client dependencies
+- Good for debugging OAuth issues
+- Can be used outside Python environments
+
+Usage:
+```python
+get_oauth_access_token(
+    method="manual_curl",
+    client_id="<your-client-id>",
+    client_secret="<your-client-secrt>",
+    token_endpoint="https://your-domain.auth.region.amazoncognito.com/oauth2/token",
+    scope="gateway-name/invoke"
+)
+```
+
+Quick Setup:
+If you have a gateway but need credentials, first get them:
+agent_gateway(action="auth", gateway_name="your-gateway-name")
+
+Choose your preferred method and call this tool again with the appropriate parameters."""
+
+            ## Method: gateway_client - Use simplified toolkit approach
+            elif method == 'gateway_client':
+                if not gateway_name:
+                    return 'Error: gateway_name is required for gateway_client method\n'
+
+                try:
+                    if not RUNTIME_AVAILABLE:
+                        return """Gateway Client Not Available
+
+Issue: bedrock-agentcore-starter-toolkit not installed
+
+To install:
+```bash
+uv add bedrock-agentcore-starter-toolkit
+## or
+pip install bedrock-agentcore-starter-toolkit
+```
+
+Alternative: Use `method="manual_curl"` with explicit credentials"""
+
+                    ## Use the starter toolkit GatewayClient approach
+                    import json
+
+                    ## Load gateway configuration
+                    import os
+                    from bedrock_agentcore_starter_toolkit.operations.gateway.client import (
+                        GatewayClient,
+                    )
+
+                    config_dir = os.path.expanduser('~/.agentcore_gateways')
+                    config_file = os.path.join(config_dir, f'{gateway_name}.json')
+
+                    if not os.path.exists(config_file):
+                        ## Try to get cognito info from gateway setup
+                        runtime = Runtime()
+                        try:
+                            ## Create OAuth if not exists (EZ Auth)
+                            cognito_result = runtime.create_oauth_authorizer_with_cognito(
+                                gateway_name
+                            )
+                            client_info = cognito_result.get('client_info', {})
+                        except Exception as e:
+                            return f"""Gateway Configuration Not Found: `{gateway_name}`
+
+Issue: No stored configuration and failed to create OAuth setup
+Error: {str(e)}
+
+Solutions:
+1. Create gateway first: `agent_gateway(action="setup", gateway_name="{gateway_name}")`
+2. Use manual method: Get credentials from AWS Cognito Console
+3. List existing gateways: `agent_gateway(action="list")`
+
+Config Directory: `{config_dir}`"""
+                    else:
+                        ## Load stored configuration
+                        with open(config_file, 'r') as f:
+                            gateway_config = json.load(f)
+                        client_info = gateway_config.get('cognito_client_info', {})
+
+                    if not client_info:
+                        return f"""Missing OAuth Configuration: `{gateway_name}`
+
+Issue: Gateway exists but missing OAuth client info
+
+Solutions:
+1. Recreate gateway: `agent_gateway(action="setup", gateway_name="{gateway_name}")`
+2. Use manual method: Get credentials from AWS Cognito Console
+3. Check configuration: `{config_file}`"""
+
+                    ## Get access token using GatewayClient
+                    gateway_client = GatewayClient(region_name=region)
+                    access_token = gateway_client.get_access_token_for_cognito(client_info)
+
+                    return f"""## OK Access Token Generated (Gateway Client)
+
+#### Gateway: `{gateway_name}`
+- Method: Simplified GatewayClient
+- Region: {region}
+- Token Type: Bearer
+
+#### Target: Access Token:
+```
+{access_token}
+```
+
+#### Tip: Usage Examples:
+
+##### MCP Client Integration:
+```python
+from mcp import MCPClient
+from mcp.client.streamable_http import streamablehttp_client
+
+## Replace with your actual gateway URL from AWS Console
+gateway_url = "https://gateway-id.bedrock-agentcore.{region}.amazonaws.com/mcp"
+
+client = MCPClient(
+    lambda: streamablehttp_client(
+        gateway_url,
+        headers={{"Authorization": "Bearer {access_token}"}}
+    )
+)
+
+with client:
+    tools = client.list_tools_sync()
+    print([tool.tool_name for tool in tools])
+```
+
+##### Direct HTTP Request:
+```bash
+curl -H "Authorization: Bearer {access_token}" \\
+     https://your-gateway-url/mcp/tools
+```
+
+#### ! Important Notes:
+- Token expires: Use this tool to generate new tokens when needed
+- Store securely: Don't commit tokens to version control
+- Gateway URL: Check AWS Console for exact endpoint URL
+
+Success: Ready to connect to gateway with simplified token management!"""
+
+                except Exception as e:
+                    return f"""Gateway Client Error: {str(e)}
+
+Gateway: `{gateway_name}`
+Method: gateway_client
+
+Possible Causes:
+- Gateway configuration missing or invalid
+- Network connectivity issues
+- AWS credentials expired
+- Cognito User Pool or App Client deleted
+
+Solutions:
+1. Check gateway exists: `agent_gateway(action="list")`
+2. Recreate gateway: `agent_gateway(action="setup", gateway_name="{gateway_name}")`
+3. Try manual method: Use explicit OAuth credentials
+4. Check AWS Console: Verify Cognito User Pool exists"""
+
+            ## Method: manual_curl - Direct OAuth 2.0 flow
+            elif method == 'manual_curl':
+                if not all([client_id, client_secret, token_endpoint, scope]):
+                    return """Missing Required Parameters for Manual cURL
+
+Required Parameters:
+- `client_id`: OAuth client ID from Cognito
+- `client_secret`: OAuth client secret from Cognito
+- `token_endpoint`: OAuth token endpoint URL
+- `scope`: OAuth scope (usually gateway-name/invoke)
+
+Example:
+```python
+get_oauth_access_token(
+    method="manual_curl",
+    client_id="<your-client-id>",
+    client_secret="<your-client-secrt>",
+    token_endpoint="https://agentcore-cf32b91a.auth.us-east-1.amazoncognito.com/oauth2/token",
+    scope="clean-dynamodb-gateway/invoke"
+)
+```
+
+To get credentials:
+1. From existing gateway: `agent_gateway(action="auth", gateway_name="your-gateway")`
+2. From AWS Console: Cognito → User Pools → App clients"""
+
+                try:
+                    import json
+                    import subprocess
+
+                    ## Build curl command for OAuth 2.0 client credentials flow
+                    curl_cmd = [
+                        'curl',
+                        '-X',
+                        'POST',
+                        token_endpoint,
+                        '-H',
+                        'Content-Type: application/x-www-form-urlencoded',
+                        '-d',
+                        f'grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}',
+                        '--silent',
+                    ]
+
+                    ## Execute curl command
+                    result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=30)
+
+                    if result.returncode == 0:
+                        try:
+                            ## Parse JSON response
+                            token_data = json.loads(result.stdout)
+                            access_token = token_data.get('access_token')
+                            token_type = token_data.get('token_type', 'Bearer')
+                            expires_in = token_data.get('expires_in', 'Unknown')
+
+                            if not access_token:
+                                return f"""No Access Token in Response
+
+Response: {result.stdout}
+Token Endpoint: {token_endpoint}
+
+Possible Issues:
+- Invalid client credentials
+- Incorrect scope
+- Token endpoint URL wrong
+- Cognito configuration issues"""
+
+                            return f"""## OK Access Token Generated (Manual cURL)
+
+#### OAuth Details:
+- Client ID: `{client_id}`
+- Scope: `{scope}`
+- Token Type: {token_type}
+- Expires In: {expires_in} seconds
+
+#### Target: Access Token:
+```
+{access_token}
+```
+
+#### Tip: Usage Examples:
+
+##### cURL Command:
+```bash
+curl -H "Authorization: Bearer {access_token}" \\
+     https://your-gateway-url/mcp/tools
+```
+
+##### Python HTTP Client:
+```python
+import requests
+
+headers = {{"Authorization": "Bearer {access_token}"}}
+response = requests.get("https://your-gateway-url/mcp/tools", headers=headers)
+print(response.json())
+```
+
+##### MCP Client:
+```python
+from mcp import MCPClient
+from mcp.client.streamable_http import streamablehttp_client
+
+client = MCPClient(
+    lambda: streamablehttp_client(
+        "https://your-gateway-url/mcp",
+        headers={{"Authorization": "Bearer {access_token}"}}
+    )
+)
+```
+
+#### ! Token Management:
+- Expires: Token expires in {expires_in} seconds
+- Refresh: Use this tool again to get a new token
+- Security: Store securely, don't log or commit to version control
+
+#### Update: Automated Refresh Script:
+```python
+def get_fresh_token():
+    return get_oauth_access_token(
+        method="manual_curl",
+        client_id="{client_id}",
+        client_secret="***", ## Your secret
+        token_endpoint="{token_endpoint}",
+        scope="{scope}"
+    )
+```
+
+Success: Ready to use with full manual control over OAuth flow!"""
+
+                        except json.JSONDecodeError:
+                            return f"""Invalid JSON Response
+
+Raw Response: {result.stdout}
+Error Response: {result.stderr}
+Token Endpoint: {token_endpoint}
+
+Possible Issues:
+- Token endpoint URL is incorrect
+- OAuth server returned HTML error page
+- Network connectivity issues
+- DNS resolution problems"""
+
+                    else:
+                        return f"""OAuth Request Failed
+
+cURL Error: {result.stderr}
+Exit Code: {result.returncode}
+Token Endpoint: {token_endpoint}
+
+Troubleshooting:
+1. Check endpoint URL: Verify the token endpoint is correct
+2. Test connectivity: `curl {token_endpoint}`
+3. Verify credentials: Check client ID and secret in AWS Console
+4. Check scope: Ensure scope matches gateway configuration
+
+Command that failed:
+```bash
+curl -X POST {token_endpoint} \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "grant_type=client_credentials&client_id={client_id}&client_secret=***&scope={scope}"
+```"""
+
+                except subprocess.TimeoutExpired:
+                    return f"""OAuth Request Timeout
+
+Token Endpoint: {token_endpoint}
+Timeout: 30 seconds
+
+Possible Causes:
+- Network connectivity issues
+- DNS resolution problems
+- Token endpoint server issues
+- Firewall blocking the request
+
+Troubleshooting:
+1. Test basic connectivity: `ping {token_endpoint.split('/')[2]}`
+2. Check DNS: `nslookup {token_endpoint.split('/')[2]}`
+3. Try from browser: Visit the endpoint URL
+4. Check network settings: VPN, proxy, firewall"""
+
+                except Exception as e:
+                    return f"""Manual cURL Error: {str(e)}
+
+Token Endpoint: {token_endpoint}
+Client ID: {client_id}
+
+Possible Causes:
+- curl command not available
+- Invalid parameters format
+- System/environment issues
+
+Alternative: Try the gateway_client method for automated handling"""
+
+            else:
+                return f"""Unknown Method: `{method}`
+
+Available Methods:
+- `ask` - Show method options (default)
+- `gateway_client` - Use simplified GatewayClient (recommended)
+- `manual_curl` - Direct OAuth 2.0 client credentials flow
+
+Example:
+```python
+get_oauth_access_token(method="gateway_client", gateway_name="my-gateway")
+```"""
+
+        except Exception as e:
+            return f'OAuth Token Generation Error: {str(e)}'
