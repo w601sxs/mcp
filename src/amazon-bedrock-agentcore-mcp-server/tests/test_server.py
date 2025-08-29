@@ -38,19 +38,7 @@ class TestAgentCoreMCPServer:
     def test_server_initialization(self):
         """Test that server initializes correctly."""
         assert mcp is not None
-        assert mcp.name == 'AgentCore MCP Server - Modular Architecture v2.0.0'
-
-    @pytest.mark.asyncio
-    async def test_server_info_tool(self):
-        """Test the server_info tool provides comprehensive information."""
-        result_tuple = await mcp.call_tool('server_info', {})
-        result = extract_result(result_tuple)
-
-        assert result is not None
-        assert 'AgentCore MCP Server' in result
-        assert 'Modular Architecture' in result
-        assert 'tools available' in result
-        assert '✅' in result or 'OK' in result or 'ready' in result.lower()
+        assert mcp.name == 'AgentCore MCP Server'
 
     @pytest.mark.asyncio
     async def test_tools_registration(self):
@@ -59,8 +47,6 @@ class TestAgentCoreMCPServer:
         tool_names = [tool.name for tool in tools]
 
         # Core server tools
-        assert 'server_info' in tool_names
-
         # OAuth and environment tools
         assert 'get_oauth_access_token' in tool_names
         assert 'validate_agentcore_environment' in tool_names
@@ -245,12 +231,6 @@ if __name__ == '__main__':
 
     async def run_basic_test():
         """Run a basic test to verify server works."""
-        print('Testing server info...')
-        result_tuple = await mcp.call_tool('server_info', {})
-        result = extract_result(result_tuple)
-        print(result)
-        print('✓ Server info works')
-
         print('Testing tool list...')
         tools = await mcp.list_tools()
         print(f'✓ {len(tools)} tools registered')

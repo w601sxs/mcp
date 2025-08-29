@@ -48,16 +48,10 @@ class TestBasicFunctionality:
         assert len(tools) > 10  # Should have multiple tools
 
         tool_names = [tool.name for tool in tools]
-        assert 'server_info' in tool_names
-
-    @pytest.mark.asyncio
-    async def test_server_info_works(self):
-        """Test server_info tool."""
-        result_tuple = await mcp.call_tool('server_info', {})
-        result = extract_result(result_tuple)
-
-        assert 'AgentCore MCP Server' in result
-        assert 'tools available' in result
+        assert 'memory_save_conversation' in tool_names
+        assert 'deploy_agentcore_app' in tool_names
+        assert 'get_oauth_access_token' in tool_names
+        assert 'validate_agentcore_environment' in tool_names
 
     @pytest.mark.asyncio
     async def test_validate_environment_works(self):
@@ -185,11 +179,6 @@ if __name__ == '__main__':
         # Test listing tools
         tools = await mcp.list_tools()
         print(f'✓ Tools: {len(tools)} registered')
-
-        # Test server info
-        result = await mcp.call_tool('server_info', {})
-        actual_result = extract_result(result)
-        print('✓ Server info works', actual_result)
 
         # Test environment validation
         env_result = await mcp.call_tool('validate_agentcore_environment', {'project_path': '.'})

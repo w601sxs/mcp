@@ -18,11 +18,11 @@ Model Context Protocol server for Amazon Bedrock AgentCore operations.
 Designed with a modular architecture to improve maintainability.
 
 Module Organization:
-- agentcore_utils.py: Core utilities, OAuth, and environment validation
-- agentcore_runtime.py: Agent deployment and invocation management
-- agentcore_gateway.py: Gateway operations and MCP integration
-- agentcore_identity.py: Credential provider management
-- agentcore_memory.py: Memory operations and integration
+- utils.py: Core utilities, OAuth, and environment validation
+- runtime.py: Agent deployment and invocation management
+- gateway.py: Gateway operations and MCP integration
+- identity.py: Credential provider management
+- memory.py: Memory operations and integration
 - Main server: Module coordination and tool registration
 
 Available Tools:
@@ -66,178 +66,45 @@ Requires: Python 3.10+, Amazon Bedrock AgentCore SDK 2.x
 
 import sys
 import traceback
+from .gateway import register_gateway_tools
+
+# Identity and credential management
+from .identity import register_identity_tools, register_oauth_tools
+
+# Memory management and integration
+from .memory import register_memory_tools
+
+# Agent lifecycle and runtime management
+from .runtime import register_analysis_tools, register_deployment_tools
+from .utils import (
+    register_discovery_tools,
+    register_environment_tools,
+    register_github_discovery_tools,
+)
 
 # MCP server framework
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 
 
-# === MODULE IMPORTS ===
-# Import all modular components with comprehensive error handling
-# This should not fail if you have the required dependencies installed
-# Only useful when developing or debugging locally
-try:
-    # Core utility and authentication modules
-    # Gateway management and MCP integration
-    from .gateway import register_gateway_tools
-
-    # Identity and credential management
-    from .identity import register_identity_tools, register_oauth_tools
-
-    # Memory management and integration
-    from .memory import register_memory_tools
-
-    # Agent lifecycle and runtime management
-    from .runtime import register_analysis_tools, register_deployment_tools
-    from .utils import (
-        register_discovery_tools,
-        register_environment_tools,
-        register_github_discovery_tools,
-    )
-
-    # Module availability flags
-    MODULES_AVAILABLE = True
-    IMPORT_ERROR = None
-
-except ImportError as e:
-    # Graceful degradation when modules are not available
-    MODULES_AVAILABLE = False
-    IMPORT_ERROR = str(e)
-
-    # Fallback error handler for module import failures
-    def create_error_tool(error_msg: str):
-        """Create an error reporting tool when module imports fail."""
-
-        def error_tool() -> str:
-            return f"""AgentCore MCP Server - Module Import Error
-
-Import Error: {error_msg}
-
-Missing modules:
-- runtime.py (agent management)
-- gateway.py (gateway operations)
-- identity.py (credential management and OAuth)
-- memory.py (memory operations)
-- utils.py (extra utilities)
-
-To resolve:
-1. Check all module files are present in server directory
-2. Validate Python syntax in module files
-3. Install dependencies: uv add bedrock-agentcore bedrock-agentcore-starter-toolkit
-4. Verify file permissions
-
-Server directory: {Path(__file__).parent}
-
-Fallback: Use monolithic server if modules unavailable
-Support: Check individual module errors for details"""
-
-        return error_tool
-
-
 # === SERVER INITIALIZATION ===
 # Initialize FastMCP server with descriptive name
 mcp = FastMCP('AgentCore MCP Server')
 
-# Module registration and tool loading
-
-if MODULES_AVAILABLE:
-    try:
-        # Register tools from each module
-        register_oauth_tools(mcp)
-        register_environment_tools(mcp)
-        register_discovery_tools(mcp)  # Enhanced agent discovery from legacy servers
-        register_github_discovery_tools(mcp)  # GitHub examples discovery
-        register_analysis_tools(mcp)
-        register_deployment_tools(mcp)
-        register_gateway_tools(mcp)
-        register_identity_tools(mcp)
-        register_memory_tools(mcp)
-
-        print('All AgentCore MCP tools registered successfully')
-
-    except Exception as e:
-        print(f'Error registering tools: {str(e)}')
-        traceback.print_exc()
-
-        # Add error tool if registration fails
-        @mcp.tool()
-        async def registration_error() -> str:
-            """Report tool registration errors."""
-            return """Tool Registration Error
-
-Error:
-
-Modules exist but tool registration failed.
-
-Possible causes:
-1. Syntax errors in module files
-2. Missing dependencies
-3. Import conflicts
-4. Function signature mismatches
-
-Troubleshooting:
-1. Check module files for syntax errors
-2. Install dependencies: uv add bedrock-agentcore bedrock-agentcore-starter-toolkit boto3
-3. Restart MCP server
-4. Check server logs for detailed errors
-
-Server running with limited functionality."""
-
-else:
-    # Add error tools if modules aren't available
-    error_tool_func = create_error_tool(IMPORT_ERROR)
-
-    mcp.tool('module_error')(error_tool_func)
-
-    print(f'AgentCore modules not available: {IMPORT_ERROR}')
-    print('Server running in error mode - use module_error tool for diagnostics')
-
-# Server startup and main execution
-
-
-async def main():
-    """Main server startup function."""
-    print('Starting AgentCore MCP Server (Modular v2.0.0)...')
-
-    # Print startup status
-    if MODULES_AVAILABLE:
-        print('All modules loaded successfully')
-        print('Tools registered from:')
-        print('   - utils.py (OAuth, validation)')
-        print('   - runtime.py (deployment, analysis)')
-        print('   - gateway.py (gateway management)')
-        print('   - memory.py (memory operations)')
-    else:
-        print(f'Modules not available: {IMPORT_ERROR}')
-        print('Server running in error mode')
-
-    print(f'Server directory: {Path(__file__).parent}')
-    print('Ready for MCP client connections...')
-
-    # Run the server
-    await mcp.run()
-
-
-async def run_server():
-    """Run the server with proper event loop handling."""
-    await main()
+register_oauth_tools(mcp)
+register_environment_tools(mcp)
+register_discovery_tools(mcp)  # Enhanced agent discovery from legacy servers
+register_github_discovery_tools(mcp)  # GitHub examples discovery
+register_analysis_tools(mcp)
+register_deployment_tools(mcp)
+register_gateway_tools(mcp)
+register_identity_tools(mcp)
+register_memory_tools(mcp)
 
 
 def run_main():
     """Run the main function, handling asyncio properly."""
-    print('Starting AgentCore MCP Server (Modular v2.0.0)...')
-
-    # Print startup status
-    if MODULES_AVAILABLE:
-        print('All modules loaded successfully')
-        print('Tools registered from:')
-        print('   - utils.py (OAuth, validation)')
-        print('   - runtime.py (deployment, analysis)')
-        print('   - gateway.py (gateway management)')
-        print('   - memory.py (memory operations)')
-    else:
-        print(f'Modules not available: {IMPORT_ERROR}')
-        print('Server running in error mode')
+    print('Starting AgentCore MCP Server ...')
 
     print(f'Server directory: {Path(__file__).parent}')
     print('Ready for MCP client connections...')

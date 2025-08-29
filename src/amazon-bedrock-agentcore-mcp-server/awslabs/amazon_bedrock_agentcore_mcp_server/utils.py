@@ -25,83 +25,57 @@ Implemented MCP Tools:
 - discover_agentcore_examples: GitHub examples repository integration
 """
 
+import boto3
+import os
 import re
 import subprocess
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+import yaml
+from bedrock_agentcore import BedrockAgentCoreApp
 
 ## Optional YAML support for configuration parsing
-try:
-    import yaml
-
-    YAML_AVAILABLE = True
-except ImportError:
-    YAML_AVAILABLE = False
-
-from mcp.server.fastmcp import FastMCP
-from pydantic import Field
-
-
 ## AgentCore SDK and starter toolkit imports
-try:
-    from bedrock_agentcore import BedrockAgentCoreApp, BedrockAgentCoreContext, RequestContext
-    from bedrock_agentcore._utils.endpoints import (
-        get_control_plane_endpoint,
-        get_data_plane_endpoint,
-    )
+from bedrock_agentcore.memory import MemoryClient, MemoryControlPlaneClient
+from bedrock_agentcore.services.identity import IdentityClient
 
-    print(get_control_plane_endpoint, get_data_plane_endpoint)
+## CRITICAL: Import the Runtime class from starter toolkit for actual deployment
+from bedrock_agentcore_starter_toolkit import Runtime
+from mcp.server.fastmcp import FastMCP
+from pathlib import Path
+from pydantic import Field
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 
-    print(dir(BedrockAgentCoreApp), dir(BedrockAgentCoreContext), dir(RequestContext))
-    from bedrock_agentcore.identity import requires_access_token, requires_api_key
 
-    print(dir(requires_access_token), dir(requires_api_key))
-    from bedrock_agentcore.memory import MemoryClient, MemoryControlPlaneClient
-    from bedrock_agentcore.memory.constants import MemoryStatus, StrategyType
+# from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
 
-    print(dir(MemoryStatus), dir(StrategyType))
-    from bedrock_agentcore.runtime.models import PingStatus
+SDK_AVAILABLE = True
+RUNTIME_AVAILABLE = True
+SDK_IMPORT_ERROR = None
+YAML_AVAILABLE = True
 
-    print(dir(PingStatus))
-    from bedrock_agentcore.services.identity import IdentityClient
+## SDK capability detection
+SDK_CAPABILITIES = {
+    'BedrockAgentCoreApp': {
+        'methods': [m for m in dir(BedrockAgentCoreApp) if not m.startswith('_')],
+        'has_configure': hasattr(BedrockAgentCoreApp, 'configure'),
+        'has_launch': hasattr(BedrockAgentCoreApp, 'launch'),
+        'has_run': hasattr(BedrockAgentCoreApp, 'run'),
+        'has_entrypoint_decorator': True,
+    },
+    'MemoryClient': {
+        'methods': [m for m in dir(MemoryClient) if not m.startswith('_')],
+        'available': True,
+    },
+    'MemoryControlPlaneClient': {
+        'methods': [m for m in dir(MemoryControlPlaneClient) if not m.startswith('_')],
+        'available': True,
+    },
+    'IdentityClient': {
+        'methods': [m for m in dir(IdentityClient) if not m.startswith('_')],
+        'available': True,
+    },
+}
 
-    ## CRITICAL: Import the Runtime class from starter toolkit for actual deployment
-    from bedrock_agentcore_starter_toolkit import Runtime
-    # from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-
-    SDK_AVAILABLE = True
-    RUNTIME_AVAILABLE = True
-    SDK_IMPORT_ERROR = None
-
-    ## SDK capability detection
-    SDK_CAPABILITIES = {
-        'BedrockAgentCoreApp': {
-            'methods': [m for m in dir(BedrockAgentCoreApp) if not m.startswith('_')],
-            'has_configure': hasattr(BedrockAgentCoreApp, 'configure'),
-            'has_launch': hasattr(BedrockAgentCoreApp, 'launch'),
-            'has_run': hasattr(BedrockAgentCoreApp, 'run'),
-            'has_entrypoint_decorator': True,
-        },
-        'MemoryClient': {
-            'methods': [m for m in dir(MemoryClient) if not m.startswith('_')],
-            'available': True,
-        },
-        'MemoryControlPlaneClient': {
-            'methods': [m for m in dir(MemoryControlPlaneClient) if not m.startswith('_')],
-            'available': True,
-        },
-        'IdentityClient': {
-            'methods': [m for m in dir(IdentityClient) if not m.startswith('_')],
-            'available': True,
-        },
-    }
-
-except ImportError as e:
-    SDK_AVAILABLE = False
-    RUNTIME_AVAILABLE = False
-    SDK_IMPORT_ERROR = str(e)
-    SDK_CAPABILITIES = {}
 
 ## Core utility functions
 
@@ -553,11 +527,8 @@ def register_environment_tools(mcp: FastMCP):
             return f'Environment Validation Error: {str(e)}'
 
 
-def get_environment_next_steps(issues: List[str], existing_agents: List[dict] = None) -> str:
+def get_environment_next_steps(issues: List[str], existing_agents: List[dict] = []) -> str:
     """Generate next steps based on validation issues."""
-    if existing_agents is None:
-        existing_agents = []
-
     steps = []
 
     if any('AgentCore CLI' in issue for issue in issues):
@@ -622,8 +593,6 @@ def what_agents_can_i_invoke(region: str = 'us-east-1') -> str:
     - 🔵 Ready to Update: Both local + AWS but not ready
     """
     try:
-        import boto3
-
         ## Get AWS deployed agents with timeout
         aws_agents = {}
         try:
@@ -884,9 +853,10 @@ def project_discover(action: str = 'agents', search_path: str = '.') -> str:
     - memories: Find memory resources
     - all: Complete project scan
     """
+    search_path_str = str(search_path) or '.'
     try:
-        search_path = Path(search_path).absolute()
-
+        search_path_obj = Path(search_path_str).absolute()
+        print(f'Searching in: {search_path_obj}')
         if action == 'agents':
             ## Find potential agent files
             agent_patterns = [
@@ -899,7 +869,7 @@ def project_discover(action: str = 'agents', search_path: str = '.') -> str:
             agent_files = []
 
             for pattern in agent_patterns:
-                files = list(search_path.glob(pattern))
+                files = list(Path(search_path).glob(pattern))
                 agent_files.extend([f for f in files if f not in agent_files])
 
             ## Filter out AgentCore files and test files
@@ -973,7 +943,7 @@ Found: {len(analyzed_files)} agent files
 
         elif action == 'configs':
             ## Find AgentCore configuration files with status checking
-            config_files = list(search_path.glob('**/.bedrock_agentcore.yaml'))
+            config_files = list(Path(search_path).glob('**/.bedrock_agentcore.yaml'))
 
             if not config_files:
                 return f"""## Config: No AgentCore Configurations Found
@@ -1013,16 +983,18 @@ What this means:
 
                                         ## Check agent status if SDK available
                                         if RUNTIME_AVAILABLE:
+                                            original_cwd = Path.cwd()
                                             try:
-                                                original_cwd = Path.cwd()
-                                                import os
-
                                                 os.chdir(config_file.parent)
 
                                                 runtime = get_runtime_for_agent(agent_name)
                                                 status_result = runtime.status()
 
-                                                if hasattr(status_result, 'endpoint'):
+                                                if (
+                                                    hasattr(status_result, 'endpoint')
+                                                    and status_result.endpoint
+                                                    and hasattr(status_result.endpoint, 'get')
+                                                ):
                                                     agent_info['status'] = (
                                                         status_result.endpoint.get(
                                                             'status', 'UNKNOWN'
@@ -1451,7 +1423,7 @@ def discover_agentcore_examples_from_github(
     try:
         import requests
         import time
-        from dataclasses import dataclass
+        from dataclasses import dataclass, field
         from typing import Dict, List, Optional
 
         @dataclass
@@ -1462,10 +1434,10 @@ def discover_agentcore_examples_from_github(
             use_case: str = ''
             framework: str = ''
             level: str = ''
-            components: List[str] = None
+            components: List[str] = field(default_factory=list)
             format_type: str = ''
             github_url: str = ''
-            metadata: Dict[str, str] = None
+            metadata: Dict[str, str] = field(default_factory=dict)
 
             def __post_init__(self):
                 if self.components is None:
@@ -1509,7 +1481,7 @@ def discover_agentcore_examples_from_github(
                 readme_query = f'{" ".join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples'
                 try:
                     result = subprocess.run(
-                        ['gh', 'api', f'/search/code?q={requests.utils.quote(readme_query)}'],
+                        ['gh', 'api', f'/search/code?q={quote(readme_query)}'],
                         capture_output=True,
                         text=True,
                         timeout=15,
@@ -1548,7 +1520,7 @@ def discover_agentcore_examples_from_github(
                                 [
                                     'gh',
                                     'api',
-                                    f'/search/code?q={requests.utils.quote(file_query)}',
+                                    f'/search/code?q={quote(file_query)}',
                                 ],
                                 capture_output=True,
                                 text=True,
@@ -1596,7 +1568,7 @@ def discover_agentcore_examples_from_github(
                             [
                                 'gh',
                                 'api',
-                                f'/search/code?q={requests.utils.quote(combined_query)}',
+                                f'/search/code?q={quote(combined_query)}',
                             ],
                             capture_output=True,
                             text=True,
@@ -1664,9 +1636,7 @@ def discover_agentcore_examples_from_github(
 
                 # Try code search in README files specifically
                 readme_query = f'{" ".join(query_terms)} in:readme repo:awslabs/amazon-bedrock-agentcore-samples'
-                search_url = (
-                    f'https://api.github.com/search/code?q={requests.utils.quote(readme_query)}'
-                )
+                search_url = f'https://api.github.com/search/code?q={quote(readme_query)}'
 
                 time.sleep(0.5)  # Rate limit protection
                 response = requests.get(search_url, timeout=10)

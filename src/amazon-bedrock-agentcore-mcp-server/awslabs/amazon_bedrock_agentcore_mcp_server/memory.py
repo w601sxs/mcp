@@ -30,7 +30,7 @@ import time
 from .utils import SDK_AVAILABLE, resolve_app_file_path
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
 
 
 # ============================================================================
@@ -445,8 +445,9 @@ Event successfully created in memory."""
 
     @mcp.tool()
     async def agent_memory(
-        action: str = Field(
-            description='Memory action', enum=['create', 'list', 'health', 'delete']
+        action: Literal['create', 'list', 'health', 'delete'] = Field(
+            default='create',  # Add missing default
+            description='Memory action',
         ),
         agent_file: str = Field(default='', description='Agent file to integrate memory with'),
         agent_name: str = Field(default='', description='Agent name for memory operations'),
@@ -665,7 +666,9 @@ agent_memory(action="create", agent_name="my_agent", agent_file="my_agent.py")
                         name=f'{sanitized_agent_name}_memory', strategies=memory_strategies
                     )
 
-                    memory_id = create_result.get('memoryId')
+                    memory_id = create_result.get('memoryId', '')
+                    if not memory_id:
+                        raise Exception('Failed to get memory ID from create result')
                     create_steps.append(f' Memory created with ID: **{memory_id}**')
 
                     # Wait for memory to become active
@@ -859,7 +862,7 @@ To find memory IDs: `agent_memory(action="list")`"""
 
                         # Try to create a memory client to test connectivity
                         try:
-                            memory_client = MemoryClient(memory_id=memory_id, region_name=region)
+                            memory_client = MemoryClient(region_name=region)
                             print(dir(memory_client))  # Debugging line
                             health_steps.append(' Memory client connection successful')
                             health_info['client_test'] = 'PASSED'

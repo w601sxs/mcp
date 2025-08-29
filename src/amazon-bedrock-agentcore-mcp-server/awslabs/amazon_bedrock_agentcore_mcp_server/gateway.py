@@ -31,7 +31,7 @@ from .utils import RUNTIME_AVAILABLE, SDK_AVAILABLE
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 from pydantic import Field
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 
 # ============================================================================
@@ -221,7 +221,14 @@ async def _discover_smithy_models() -> Dict[str, List[Dict[str, str]]]:
         response = requests.get(github_api_url, timeout=10)
 
         if response.status_code != 200:
-            return {'error': f'GitHub API request failed: {response.status_code}'}
+            return {
+                'errors': [
+                    {
+                        'message': f'GitHub API request failed: {response.status_code}',
+                        'type': 'not200',
+                    }
+                ]
+            }
 
         models_contents = response.json()
 
@@ -275,9 +282,18 @@ async def _discover_smithy_models() -> Dict[str, List[Dict[str, str]]]:
         return dict(categories)
 
     except requests.RequestException as e:
-        return {'error': f'Network error accessing GitHub API: {str(e)}'}
+        return {
+            'errors': [
+                {
+                    'message': f'Network error accessing GitHub API: {str(e)}',
+                    'type': 'RequestException',
+                }
+            ]
+        }
     except Exception as e:
-        return {'error': f'Failed to discover Smithy models: {str(e)}'}
+        return {
+            'errors': [{'message': f'Failed to discover Smithy models: {str(e)}', 'type': 'Other'}]
+        }
 
 
 async def _upload_openapi_schema(
@@ -381,42 +397,42 @@ def register_gateway_tools(mcp: FastMCP):
 
     @mcp.tool()
     async def agent_gateway(
-        action: str = Field(
-            default='setup',
-            description='Gateway action',
-            enum=[
-                'setup',
-                'create',
-                'targets',
-                'cognito',
-                'list',
-                'delete',
-                'auth',
-                'test',
-                'list_tools',
-                'search_tools',
-                'invoke_tool',
-                'discover',
-                'safe_examples',
-            ],
-        ),
+        action: Literal[
+            'setup',
+            'create',
+            'targets',
+            'cognito',
+            'list',
+            'delete',
+            'auth',
+            'test',
+            'list_tools',
+            'search_tools',
+            'invoke_tool',
+            'discover',
+            'safe_examples',
+        ] = Field(default='setup', description='Gateway action'),
         gateway_name: str = Field(default='', description='Gateway name'),
-        target_type: str = Field(
-            default='lambda',
-            description='Target type',
-            enum=['lambda', 'openApiSchema', 'smithyModel'],
+        target_type: Literal['lambda', 'openApiSchema', 'smithyModel'] = Field(
+            default='lambda', description='Target type'
         ),
         smithy_model: str = Field(
             default='', description="AWS Smithy model name (e.g., 's3', 'dynamodb')"
         ),
-        openapi_spec: dict = Field(default=None, description='OpenAPI specification as dict'),
+        openapi_spec: Optional[dict] = Field(
+            default=None, description='OpenAPI specification as dict'
+        ),
         target_name: str = Field(default='', description='Custom target name'),
-        target_payload: dict = Field(default=None, description='Target configuration payload'),
+        target_payload: Optional[dict] = Field(
+            default=None, description='Target configuration payload'
+        ),
         role_arn: str = Field(default='', description='IAM role ARN for targets'),
         enable_semantic_search: bool = Field(
             default=True, description='Enable semantic search for tools'
         ),
-        credentials: dict = Field(default=None, description='Authentication credentials'),
+        credentials: Optional[dict] = Field(
+            default=None, description='Authentication credentials'
+        ),
         credential_location: str = Field(
             default='QUERY_PARAMETER', description='Where to include credentials'
         ),
@@ -427,7 +443,9 @@ def register_gateway_tools(mcp: FastMCP):
         region: str = Field(default='us-east-1', description='AWS region'),
         query: str = Field(default='', description='Search query for tools'),
         tool_name: str = Field(default='', description='Tool name to invoke'),
-        tool_arguments: dict = Field(default=None, description='Arguments for tool invocation'),
+        tool_arguments: Optional[dict] = Field(
+            default=None, description='Arguments for tool invocation'
+        ),
     ) -> str:
         """Gateway: CONSOLIDATED AGENT GATEWAY MANAGEMENT.
 
@@ -1031,7 +1049,7 @@ Alternative: Use individual actions (create, targets, cognito)"""
 
                     # Step 1: Create Cognito OAuth authorizer
                     setup_steps.append('Security: Step 1: Setting up Cognito OAuth...')
-
+                    cognito_result = None
                     try:
                         cognito_result = client.create_oauth_authorizer_with_cognito(gateway_name)
                         setup_results['cognito'] = cognito_result
@@ -1069,7 +1087,9 @@ Alternative: Use individual actions (create, targets, cognito)"""
                         gateway_result = client.create_mcp_gateway(
                             name=gateway_name,
                             role_arn=None,  # Let it auto-create
-                            authorizer_config=cognito_result.get('authorizer_config'),
+                            authorizer_config=cognito_result.get('authorizer_config')
+                            if cognito_result
+                            else None,
                             enable_semantic_search=enable_semantic_search,
                         )
                         setup_results['gateway'] = gateway_result
@@ -1252,9 +1272,15 @@ Gateway URL: Check AWS Console for connection details"""
                     setup_steps.append('Security: Step 4: Generating access token...')
 
                     try:
-                        access_token = client.get_access_token_for_cognito(
-                            cognito_result['client_info']
-                        )
+                        if cognito_result and 'client_info' in cognito_result:
+                            access_token = client.get_access_token_for_cognito(
+                                cognito_result['client_info']
+                            )
+                        else:
+                            setup_steps.append(
+                                '! Cannot generate access token: Cognito setup failed'
+                            )
+                            access_token = None
                         setup_results['access_token'] = access_token
                         setup_steps.append('OK Access token generated successfully')
                     except Exception as token_error:
@@ -1641,10 +1667,10 @@ Solutions:
                     if (
                         hasattr(result, 'get')
                         and result.get('structuredContent')
-                        and result['structuredContent'].get('tools')
+                        and result.get('structuredContent', {}).get('tools')
                     ):
                         # Direct access to structured content
-                        tools_data = result['structuredContent']['tools']
+                        tools_data = result.get('structuredContent', {}).get('tools', [])
                     elif 'structuredContent' in str(result):
                         # Try to extract from string representation
                         import re
@@ -1794,7 +1820,9 @@ Possible Solutions:
                         )
 
                     # Format the result nicely
-                    result_content = result.content if hasattr(result, 'content') else str(result)
+                    result_content = (
+                        result.get('content') if hasattr(result, 'get') else str(result)
+                    )
 
                     return f"""# Tool: Tool Invocation Result
 

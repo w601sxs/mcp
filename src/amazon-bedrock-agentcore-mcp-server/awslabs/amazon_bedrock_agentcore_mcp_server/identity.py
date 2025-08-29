@@ -27,9 +27,9 @@ MCP TOOLS IMPLEMENTED:
 
 import time
 from .utils import RUNTIME_AVAILABLE, SDK_AVAILABLE
-from bedrock_agentcore_starter_toolkit import Runtime
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
+from typing import Literal
 
 
 # ============================================================================
@@ -42,16 +42,14 @@ def register_identity_tools(mcp: FastMCP):
 
     @mcp.tool()
     async def manage_credentials(
-        action: str = Field(
-            default='list',
-            description='Credential action',
-            enum=['create', 'list', 'delete', 'get', 'update'],
+        action: Literal['create', 'list', 'delete', 'get', 'update'] = Field(
+            default='list', description='Credential action'
         ),
         provider_name: str = Field(default='', description='Name of the credential provider'),
         api_key: str = Field(default='', description='API key value (for create/update)'),
         description: str = Field(default='', description='Description of the credential provider'),
         region: str = Field(default='us-east-1', description='AWS region'),
-    ) -> str:
+    ):
         """Security: IDENTITY & CREDENTIAL MANAGEMENT.
 
         Manage API key credential providers for use in agents at runtime.
@@ -73,10 +71,9 @@ To use credential provider functionality:
 3. Retry credential operations
 
 Alternative: Use AWS Console for credential management"""
+        from bedrock_agentcore.services.identity import IdentityClient
 
         try:
-            from bedrock_agentcore.services.identity import IdentityClient
-
             # Initialize Identity Client
             identity_client = IdentityClient(region=region)
 
@@ -124,7 +121,7 @@ manage_credentials(
 - Region: `{region}`
 - Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 {f'- Description: {description}' if description else ''}
-
+- full result: {result}
 ## Usage in Agent Code:
 ```python
 from bedrock_agentcore.identity.auth import requires_api_key
@@ -167,7 +164,14 @@ Troubleshooting:
             elif action == 'list':
                 try:
                     # Get all credential providers
-                    providers = identity_client.list_credential_providers()
+
+                    api_key_providers = (
+                        identity_client.cp_client.list_api_key_credential_providers()
+                    )
+                    oauth2_providers = identity_client.cp_client.list_oauth2_credential_providers()
+                    providers = api_key_providers.get(
+                        'credentialProviders', []
+                    ) + oauth2_providers.get('credentialProviders', [])
 
                     if not providers or len(providers) == 0:
                         return f"""# Security: No Credential Providers Found
@@ -274,8 +278,13 @@ Troubleshooting:
                     return 'X Error: provider_name is required for delete action'
 
                 try:
-                    # Delete the credential provider
-                    identity_client.delete_credential_provider(provider_name)
+                    delete_result = identity_client.cp_client.delete_api_key_credential_provider(
+                        credentialProviderName=provider_name
+                    )
+                except ValueError:
+                    delete_result = identity_client.cp_client.delete_oauth2_credential_provider(
+                        credentialProviderName=provider_name
+                    )
 
                     return f"""# OK Credential Provider Deleted
 
@@ -296,11 +305,11 @@ Troubleshooting:
 
 Provider `{provider_name}` has been completely removed."""
 
-                except Exception as delete_error:
+                except Exception as delete_result:
                     return f"""X Failed to Delete Credential Provider
 
 Provider Name: `{provider_name}`
-Error: {str(delete_error)}
+Error: {str(delete_result)}
 
 Possible Causes:
 - Provider doesn't exist
@@ -315,8 +324,14 @@ Check Status: `manage_credentials(action="list")` to see available providers"""
                     return 'X Error: provider_name is required for get action'
 
                 try:
-                    # Get provider details
-                    provider = identity_client.get_credential_provider(provider_name)
+                    provider = identity_client.cp_client.get_api_key_credential_provider(
+                        credentialProviderName=provider_name
+                    )
+                except ValueError as get_error:
+                    print(str(get_error))
+                    provider = identity_client.cp_client.get_oauth2_credential_provider(
+                        credentialProviderName=provider_name
+                    )
 
                     return f"""# Security: Credential Provider Details
 
@@ -372,10 +387,19 @@ Check Available: `manage_credentials(action="list")`"""
                     if description:
                         update_config['description'] = description
 
-                    result = identity_client.update_credential_provider(
-                        provider_name, update_config
-                    )
-                    # print(result)
+                    try:
+                        update_result = (
+                            identity_client.cp_client.update_api_key_credential_provider(
+                                credentialProviderName=provider_name, **update_config
+                            )
+                        )
+                    except ValueError as update_error:
+                        print(update_error)
+                        update_result = (
+                            identity_client.cp_client.update_oauth2_credential_provider(
+                                credentialProviderName=provider_name, **update_config
+                            )
+                        )
 
                     return f"""# OK Credential Provider Updated
 
@@ -384,7 +408,7 @@ Check Available: `manage_credentials(action="list")`"""
 - Status: Successfully updated
 - Region: `{region}`
 - Updated: {time.strftime('%Y-%m-%d %H:%M:%S')}
-- result: {result}
+- result: {update_result}
 {f'- Description: {description}' if description else ''}
 
 ## ! Important Notes:
@@ -461,10 +485,8 @@ def register_oauth_tools(mcp: FastMCP):
 
     @mcp.tool()
     async def get_oauth_access_token(
-        method: str = Field(
-            default='ask',
-            description='Token generation method',
-            enum=['ask', 'gateway_client', 'manual_curl'],
+        method: Literal['ask', 'gateway_client', 'manual_curl'] = Field(
+            default='ask', description='Token generation method'
         ),
         gateway_name: str = Field(
             default='', description='Gateway name (for gateway_client method)'
@@ -568,10 +590,15 @@ Alternative: Use `method="manual_curl"` with explicit credentials"""
 
                     if not os.path.exists(config_file):
                         ## Try to get cognito info from gateway setup
-                        runtime = Runtime()
+
                         try:
                             ## Create OAuth if not exists (EZ Auth)
-                            cognito_result = runtime.create_oauth_authorizer_with_cognito(
+                            from bedrock_agentcore_starter_toolkit.operations.gateway.client import (
+                                GatewayClient,
+                            )
+
+                            client = GatewayClient()
+                            cognito_result = client.create_oauth_authorizer_with_cognito(
                                 gateway_name
                             )
                             client_info = cognito_result.get('client_info', {})
@@ -697,11 +724,10 @@ get_oauth_access_token(
 To get credentials:
 1. From existing gateway: `agent_gateway(action="auth", gateway_name="your-gateway")`
 2. From AWS Console: Cognito → User Pools → App clients"""
+                import json
+                import subprocess
 
                 try:
-                    import json
-                    import subprocess
-
                     ## Build curl command for OAuth 2.0 client credentials flow
                     curl_cmd = [
                         'curl',

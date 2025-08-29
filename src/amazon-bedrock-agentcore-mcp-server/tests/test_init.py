@@ -111,12 +111,14 @@ class TestModuleAvailability:
     def test_all_register_functions_available(self):
         """Test that all module registration functions exist."""
         from awslabs.amazon_bedrock_agentcore_mcp_server.gateway import register_gateway_tools
-        from awslabs.amazon_bedrock_agentcore_mcp_server.identity import register_identity_tools
+        from awslabs.amazon_bedrock_agentcore_mcp_server.identity import (
+            register_identity_tools,
+            register_oauth_tools,
+        )
         from awslabs.amazon_bedrock_agentcore_mcp_server.memory import register_memory_tools
         from awslabs.amazon_bedrock_agentcore_mcp_server.utils import (
             register_discovery_tools,
             register_environment_tools,
-            register_oauth_tools,
         )
 
         # All should be callable

@@ -28,6 +28,7 @@ MCP TOOLS IMPLEMENTED:
 
 """
 
+import os
 import subprocess
 from .utils import (
     RUNTIME_AVAILABLE,
@@ -48,7 +49,7 @@ from .utils import (
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 from pydantic import Field
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 
 # ============================================================================
@@ -143,6 +144,7 @@ def check_agent_oauth_status(agent_name: str, region: str = 'us-east-1'):
             return False, False, f'Agent runtime ARN not found for {agent_name}'
 
         # Get the actual runtime configuration from AWS
+        oauth_available = False
         try:
             runtime_response = agentcore_client.get_agent_runtime(
                 agentRuntimeArn=agent_runtime_arn
@@ -566,8 +568,8 @@ def register_deployment_tools(mcp: FastMCP):
     async def deploy_agentcore_app(
         app_file: str = Field(description='AgentCore app file to deploy'),
         agent_name: str = Field(description='Name for your deployed agent'),
-        execution_mode: str = Field(
-            default='ask', description='How to deploy', enum=['ask', 'cli', 'sdk']
+        execution_mode: Literal['ask', 'cli', 'sdk'] = Field(
+            default='ask', description='How to deploy'
         ),
         region: str = Field(default='us-east-1', description='AWS region'),
         memory_enabled: bool = Field(
@@ -681,12 +683,12 @@ To invoke deployed agents:
 2. Ensure agent is deployed
 3. Retry invocation
 """
+        import json
+        import os
+        import uuid
 
+        config_dir = ''
         try:
-            import json
-            import os
-            import uuid
-
             # Find the correct config directory for this agent
             config_found, config_dir = find_agent_config_directory(agent_name)
 
@@ -726,7 +728,11 @@ Search locations checked:
                 try:
                     status_result = runtime.status()
                     if hasattr(status_result, 'endpoint'):
-                        endpoint_status = status_result.endpoint.get('status', 'UNKNOWN')
+                        endpoint_status = (
+                            status_result.endpoint.get('status', 'UNKNOWN')
+                            if status_result.endpoint
+                            else 'UNKNOWN'
+                        )
                         if endpoint_status != 'READY':
                             return f"""X Agent Not Ready
 
@@ -772,10 +778,11 @@ Next Steps: Deploy agent first with `deploy_agentcore_app`
 
                 # Process response like tutorial shows - handle bytes data properly
                 if hasattr(result, 'response'):
-                    response_data = result.response
+                    response_data = result.get('response', {})
                     # Handle bytes response from AgentCore
                     if isinstance(response_data, list) and len(response_data) > 0:
                         if isinstance(response_data[0], bytes):
+                            decoded_response = None
                             try:
                                 # Decode bytes and parse JSON
                                 decoded_response = response_data[0].decode('utf-8')
@@ -788,6 +795,7 @@ Next Steps: Deploy agent first with `deploy_agentcore_app`
                                     else str(response_data[0])
                                 )
                     elif isinstance(response_data, bytes):
+                        decoded_response = None
                         try:
                             decoded_response = response_data.decode('utf-8')
                             response_data = json.loads(decoded_response)
@@ -864,12 +872,13 @@ Troubleshooting:
             # Step 1: Validate OAuth configuration and generate token
             success, result = validate_oauth_config(agent_name, region)
             if not success:
-                return result.replace(
+                result_str = result if isinstance(result, str) else str(result)
+                return result_str.replace(
                     'Troubleshooting:',
                     'Troubleshooting:\nNote: Try regular invocation first: `invoke_agent` - many agents work without OAuth\n',
                 )
 
-            client_info = result['client_info']
+            client_info = result.get('client_info', {}) if isinstance(result, dict) else {}
 
             # Generate OAuth token (validates OAuth setup)
             token_success, access_token = generate_oauth_token(client_info, region)
@@ -934,12 +943,14 @@ Note: OAuth token is ready - just need agent deployment config
 
                     # Get Runtime object (same as invoke_agent)
                     runtime = get_runtime_for_agent(agent_name)
-
+                    status = 'UNKNOWN'
                     # Check agent status
                     try:
                         status_result = runtime.status()
                         if hasattr(status_result, 'endpoint'):
-                            status = status_result.endpoint.get('status', 'UNKNOWN')
+                            status = 'UNKNOWN'
+                            if hasattr(status_result, 'endpoint') and status_result.endpoint:
+                                status = getattr(status_result.endpoint, 'status', 'UNKNOWN')
                         else:
                             status = str(status_result)
 
@@ -990,6 +1001,7 @@ Try: `get_agent_status` for detailed agent information
                                     except (json.JSONDecodeError, IndexError):
                                         response_data = response_data[0]
                                 elif isinstance(response_data[0], bytes):
+                                    decoded_response = None
                                     try:
                                         decoded_response = response_data[0].decode('utf-8')
                                         response_data = json.loads(decoded_response)
@@ -1000,6 +1012,7 @@ Try: `get_agent_status` for detailed agent information
                                             else str(response_data[0])
                                         )
                             elif isinstance(response_data, bytes):
+                                decoded_response = None
                                 try:
                                     decoded_response = response_data.decode('utf-8')
                                     response_data = json.loads(decoded_response)
@@ -1090,15 +1103,17 @@ For OAuth troubleshooting: Check ~/.agentcore_gateways/{agent_name}_runtime.json
             # Use shared validation and token generation (DRY principle)
             success, result = validate_oauth_config(agent_name, region)
             if not success:
-                return result
+                return str(result)
 
-            client_info = result['client_info']
-            oauth_config = result['oauth_config']
+            client_info = result.get('client_info', {}) if isinstance(result, dict) else {}
+            oauth_config = result.get('oauth_config', {}) if isinstance(result, dict) else {}
 
             print(f'OAuth Config: {oauth_config}')
 
             # Generate access token using shared utility
-            token_success, access_token = generate_oauth_token(client_info, region)
+            token_success, access_token = generate_oauth_token(
+                client_info if isinstance(client_info, dict) else {}, region
+            )
             if not token_success:
                 return access_token
 
@@ -1381,20 +1396,18 @@ Fallback options:
             success, result = validate_oauth_config(agent_name, region)
             if not success:
                 # Add context about using regular invocation as alternative
-                return result.replace(
+                result_str = result if isinstance(result, str) else str(result)
+                return result_str.replace(
                     'Troubleshooting:\n1. Deploy with OAuth',
                     "Troubleshooting:\n1. Use regular invocation: If agent doesn't require OAuth, use `invoke_agent` instead\n2. Deploy with OAuth",
                 )
 
-            client_info = result['client_info']
+            client_info = result.get('client_info', {}) if isinstance(result, dict) else {}
 
             # Generate OAuth token using shared utility
             token_success, access_token = generate_oauth_token(client_info, region)
             if not token_success:
-                return (
-                    token_success
-                    + '\nUse: `get_runtime_oauth_token` for detailed token generation'
-                )
+                return 'OAuth token generation failed\nUse: `get_runtime_oauth_token` for detailed token generation'
 
             # Step 3: Use Runtime SDK pattern (same as invoke_agent) with OAuth
             try:
@@ -1413,7 +1426,7 @@ Fallback options:
 
                 config_dir_found = None
                 for config_dir in config_dirs_to_check:
-                    if check_agent_config_exists(config_dir, agent_name):
+                    if check_agent_config_exists(agent_name):
                         config_dir_found = config_dir
                         break
 
@@ -1431,7 +1444,11 @@ Fix: Deploy agent first with `deploy_agentcore_app`
                 try:
                     status_result = runtime.status()
                     if hasattr(status_result, 'endpoint'):
-                        status = status_result.endpoint.get('status', 'UNKNOWN')
+                        status = (
+                            status_result.endpoint.get('status', 'UNKNOWN')
+                            if status_result.endpoint
+                            else 'UNKNOWN'
+                        )
                     else:
                         status = str(status_result)
 
@@ -1587,6 +1604,7 @@ Troubleshooting:
         ),
     ) -> str:
         """Discover existing AgentCore agent configurations and their status."""
+        original_cwd = None
         try:
             # Resolve search path
             if search_path == '.':
@@ -1689,7 +1707,6 @@ Troubleshooting:
                         # Change to config file directory and check status
                         config_file_path = path / agent_info['config_file']
                         original_cwd = Path.cwd()
-                        import os
 
                         os.chdir(config_file_path.parent)
 
@@ -1697,7 +1714,11 @@ Troubleshooting:
                         status_result = runtime.status()
 
                         if hasattr(status_result, 'endpoint'):
-                            agent_info['status'] = status_result.endpoint.get('status', 'UNKNOWN')
+                            agent_info['status'] = (
+                                status_result.endpoint.get('status', 'UNKNOWN')
+                                if status_result.endpoint
+                                else 'UNKNOWN'
+                            )
                             agent_info['deployable'] = True
                         else:
                             agent_info['status'] = 'CONFIGURED_NOT_DEPLOYED'
@@ -1716,7 +1737,8 @@ Troubleshooting:
                         agent_info['deployable'] = False
                     finally:
                         try:
-                            os.chdir(original_cwd)
+                            if original_cwd is not None:
+                                os.chdir(original_cwd)
                         except Exception as e:
                             print(f'Error restoring directory: {str(e)}')
                             pass
@@ -2425,7 +2447,11 @@ Troubleshooting:
 
                 # Handle different status response formats from starter toolkit
                 if hasattr(status_result, 'endpoint'):
-                    status = status_result.endpoint.get('status', 'UNKNOWN')
+                    status = (
+                        status_result.endpoint.get('status', 'UNKNOWN')
+                        if status_result.endpoint
+                        else 'UNKNOWN'
+                    )
                     deployment_results['endpoint_info'] = status_result.endpoint
                 else:
                     status = str(status_result)

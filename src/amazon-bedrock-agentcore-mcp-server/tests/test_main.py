@@ -43,11 +43,7 @@ class TestIntegrationTests:
         # Test that server can list tools
         tools = await mcp.list_tools()
         assert len(tools) > 0
-
-        # Test that server_info works
-        server_info_tuple = await mcp.call_tool('server_info', {})
-        server_info = extract_result(server_info_tuple)
-        assert 'AgentCore MCP Server' in server_info
+        print(f'✓ Tools: {len(tools)} registered')
 
         # Test environment validation
         env_result_tuple = await mcp.call_tool(
