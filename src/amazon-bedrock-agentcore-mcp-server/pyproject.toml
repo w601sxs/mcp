@@ -45,7 +45,7 @@ repository = "https://github.com/awslabs/mcp.git"
 changelog = "https://github.com/awslabs/mcp/blob/main/src/amazon-bedrock-agentcore-mcp-server/CHANGELOG.md"
 
 [project.scripts]
-"awslabs.amazon-bedrock-agentcore-mcp-server" = "awslabs.amazon_bedrock_agentcore_mcp_server.server:main"
+"awslabs.amazon-bedrock-agentcore-mcp-server" = "awslabs.amazon_bedrock_agentcore_mcp_server.server:run_main"
 
 [dependency-groups]
 dev = [
